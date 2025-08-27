@@ -366,7 +366,7 @@ def upload_content():
     except ValueError:
         return jsonify({"error": f"Unknown command '{command}'"}), 400
 
-    Set busy, run function synchronously, then set idle
+    # Set busy, run function synchronously, then set idle
     server_status["busy"] = True
     try:
         function_list[cmd_index](request)  # pass raw request/message
