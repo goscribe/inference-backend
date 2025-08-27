@@ -76,9 +76,48 @@
 
   <hr>
 
+  <h2>Generate Worksheet Questions</h2>
+  <label for="numWorksheetQuestions">Number of Questions:</label>
+  <input type="number" id="numWorksheetQuestions" min="1" placeholder="e.g. 10">
+
+  <label for="worksheetDifficulty">Difficulty:</label>
+  <select id="worksheetDifficulty">
+    <option value="easy">Easy</option>
+    <option value="medium">Medium</option>
+    <option value="hard">Hard</option>
+  </select>
+
+  <button onclick="generateWorksheetQuestions()">Generate Worksheet Questions</button>
+  <p id="worksheetStatus"></p>
+
+  <hr>
+
+  <h2>Generate Worksheet Answers</h2>
+  <button onclick="generateWorksheetAnswers()">Generate Answers</button>
+  <p id="worksheetAnswersStatus"></p>
+
+  <hr>
+
+  <h2>Generate Mindmap</h2>
+  <button onclick="generateMindmap()">Generate Mindmap</button>
+  <p id="mindmapStatus"></p>
+
+  <hr>
+  
   <h2>Retrieve Full History</h2>
   <button onclick="retrieveFullHistory()">Retrieve</button>
   <pre id="historyStatus"></pre> <!-- ✅ changed to <pre> -->
+
+  <hr>
+
+
+  <h3>Inference from Prompt</h3>
+  <form id="inference-form" onsubmit="runInference(event)">
+    <input type="text" id="inference-prompt" placeholder="Enter your prompt" required>
+    <button type="submit">Run Inference</button>
+  </form>
+  <pre id="inference-result"></pre>
+
 
   <script>
     let currentSessionId = null;
@@ -343,6 +382,128 @@
         }
       } catch (err) {
         document.getElementById("flashcardAnswersStatus").innerText = "Error: " + err;
+      }
+    }
+
+    async function generateWorksheetQuestions() {
+      if (!currentSessionId) { 
+        alert("Please init a session first."); 
+        return; 
+      }
+
+      const numQuestions = document.getElementById("numWorksheetQuestions").value;
+      const difficulty = document.getElementById("worksheetDifficulty").value;
+
+      if (!numQuestions || numQuestions <= 0) {
+        alert("Please enter a valid number of questions");
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append("command", "generate_worksheet_questions");
+      formData.append("num_questions", numQuestions);
+      formData.append("difficulty", difficulty);
+
+      try {
+        const response = await fetch("https://txp-tckxn64wn5vtgip72-kzoemq8qw-custom.service.onethingrobot.com/upload", {
+          method: "POST",
+          body: formData
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          document.getElementById("worksheetStatus").innerText = "Worksheet questions generated: " + result.message;
+        } else {
+          document.getElementById("worksheetStatus").innerText = "Error: " + response.status + " " + response.statusText;
+        }
+      } catch (err) {
+        document.getElementById("worksheetStatus").innerText = "Error: " + err;
+      }
+    }
+
+    async function generateWorksheetAnswers() {
+      if (!currentSessionId) { 
+        alert("Please init a session first."); 
+        return; 
+      }
+
+      const formData = new FormData();
+      formData.append("command", "generate_worksheet_answers");
+
+      try {
+        const response = await fetch("https://txp-tckxn64wn5vtgip72-kzoemq8qw-custom.service.onethingrobot.com/upload", {
+          method: "POST",
+          body: formData
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          document.getElementById("worksheetAnswersStatus").innerText = "Worksheet answers generated: " + result.message;
+        } else {
+          document.getElementById("worksheetAnswersStatus").innerText = "Error: " + response.status + " " + response.statusText;
+        }
+      } catch (err) {
+        document.getElementById("worksheetAnswersStatus").innerText = "Error: " + err;
+      }
+    }
+
+    async function generateMindmap() {
+      if (!currentSessionId) {
+        alert("Please init a session first.");
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append("command", "generate_mindmap");
+
+      try {
+        const response = await fetch("https://txp-tckxn64wn5vtgip72-kzoemq8qw-custom.service.onethingrobot.com/upload", {
+          method: "POST",
+          body: formData
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          document.getElementById("mindmapStatus").innerText = "Mindmap generated: " + result.message;
+        } else {
+          document.getElementById("mindmapStatus").innerText = "Error: " + response.status + " " + response.statusText;
+        }
+      } catch (err) {
+        document.getElementById("mindmapStatus").innerText = "Error: " + err;
+      }
+    }
+
+    async function runInference(event) {
+      event.preventDefault(); // prevent form reload
+      if (!currentSessionId) { 
+        alert("Please init a session first."); 
+        return; 
+      }
+
+      const prompt = document.getElementById("inference-prompt").value;
+      if (!prompt) { 
+        alert("Please enter a prompt"); 
+        return; 
+      }
+
+      const formData = new FormData();
+      formData.append("command", "inference_from_prompt");
+      formData.append("prompt", prompt);
+
+      try {
+        const response = await fetch("https://txp-tckxn64wn5vtgip72-kzoemq8qw-custom.service.onethingrobot.com/upload", {
+          method: "POST",
+          body: formData
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          document.getElementById("inference-result").innerText = JSON.stringify(result, null, 2);
+        } else {
+          document.getElementById("inference-result").innerText = "Error: " + response.status + " " + response.statusText;
+        }
+      } catch (err) {
+        document.getElementById("inference-result").innerText = "Error: " + err;
       }
     }
   </script>
