@@ -121,7 +121,7 @@ formData.append("command", "analyse_pdf");
 ```
 
 **Status:**  
-- Success: `"PDF analysis started: <message>"`  
+- Success: `"PDF analysis finished: <message>"`  
 
 ---
 
@@ -134,7 +134,7 @@ formData.append("command", "analyse_img");
 ```
 
 **Status:**  
-- Success: `"Image analysis started: <message>"`  
+- Success: `"Image analysis finished: <message>"`  
 
 ---
 
@@ -147,9 +147,8 @@ formData.append("command", "generate_study_guide");
 ```
 
 **Status:**  
-- Success: JSON string.
+- Success: JSON string `{"last_response": "<generated content>"}`
 - Faliure: JSON string reporting error encountered.
-- Generated study guide at [https://txp-tckxn64wn5vtgip72-kzoemq8qw-custom.service.onethingrobot.com/last_response](https://txp-tckxn64wn5vtgip72-kzoemq8qw-custom.service.onethingrobot.com/last_response)
 
 ---
 
@@ -164,9 +163,8 @@ formData.append("difficulty", "<easy|medium|hard>");
 ```
 
 **Status:**  
-- Success: JSON string.
+- Success: JSON string `{"last_response": "<generated content>"}`
 - Faliure: JSON string reporting error encountered.
-- Generated questions at [https://txp-tckxn64wn5vtgip72-kzoemq8qw-custom.service.onethingrobot.com/last_response](https://txp-tckxn64wn5vtgip72-kzoemq8qw-custom.service.onethingrobot.com/last_response)
 
 ---
 
@@ -179,9 +177,8 @@ formData.append("command", "generate_flashcard_answers");
 ```
 
 **Status:**  
-- Success: JSON string.
+- Success: JSON string `{"last_response": "<generated content>"}`
 - Faliure: JSON string reporting error encountered.
-- Generated answers at [https://txp-tckxn64wn5vtgip72-kzoemq8qw-custom.service.onethingrobot.com/last_response](https://txp-tckxn64wn5vtgip72-kzoemq8qw-custom.service.onethingrobot.com/last_response)
 
 ---
 
@@ -196,9 +193,9 @@ formData.append("difficulty", "<easy|medium|hard>");
 ```
 
 **Status:**  
-- Success: JSON string.
+- Success: JSON string `{"last_response": "<generated content>"}`
 - Faliure: JSON string reporting error encountered.
-- Generated questions at [https://txp-tckxn64wn5vtgip72-kzoemq8qw-custom.service.onethingrobot.com/last_response](https://txp-tckxn64wn5vtgip72-kzoemq8qw-custom.service.onethingrobot.com/last_response)
+
 
 ---
 
@@ -211,9 +208,8 @@ formData.append("command", "generate_worksheet_answers");
 ```
 
 **Status:**  
-- Success: JSON string.
+- Success: JSON string `{"last_response": "<generated content>"}`
 - Faliure: JSON string reporting error encountered.
-- Generated answers at [https://txp-tckxn64wn5vtgip72-kzoemq8qw-custom.service.onethingrobot.com/last_response](https://txp-tckxn64wn5vtgip72-kzoemq8qw-custom.service.onethingrobot.com/last_response)
 
 ---
 
@@ -242,7 +238,7 @@ formData.append("prompt", "<PROMPT_STR>");
 ```
 
 **Expected Status:**  
-- Success: `"Prompting Successful"`  
+- Success: JSON string `{"last_response": "<generated content>"}`
 - Failure: `"Error: <HTTP_STATUS> <STATUS_TEXT>"`  
 
 ---
