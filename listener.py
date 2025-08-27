@@ -5,6 +5,8 @@ import json
 from fileConverter import *
 from LLM import read_pdf, update_memory, read_pdf_images, read_images, generate_summary, generate_flashcards_q, generate_flashcards_a, generate_worksheet_q, generate_worksheet_a, generate_mindmap_mermaid, prompt_input
 import requests
+from markdownConvertor import *
+converter = MarkdownToEditorJS()
 
 app = Flask(__name__)
 CORS(app)  # allow all origins for frontend JS
@@ -276,7 +278,9 @@ def generate_study_guide(request):
 
     print("Generating Study Guide Successful")
     print("Last message:", messages[-1])
-    return {"last_response": last_content}, 200
+    editorjs_json = converter.convert(last_content)
+    json_str = json.dumps(editorjs_json, indent=2, ensure_ascii=False)
+    return {"last_response": json_str}, 200
 
 
 def generate_flashcard_questions(request):
@@ -503,27 +507,28 @@ def upload_content():
         return jsonify({"error": f"Unknown command '{command}'"}), 400
 
     # Set busy, run function synchronously, then set idle
-    # server_status["busy"] = True
-    # try:
-    #     # Capture the function's return value
-    #     func_response = function_list[cmd_index](request)  # always (dict, status)
-    #     if isinstance(func_response, tuple) and len(func_response) == 2:
-    #         data, status_code = func_response
-    #         return jsonify(data), status_code
-    #     else:
-    #         return jsonify(func_response), 200
-    # except Exception as e:
-    #     server_status["busy"] = False
-    #     return jsonify({"error": f"Function execution failed: {e}"}), 500
-    # finally:
-    #     server_status["busy"] = False
-    func_response = function_list[cmd_index](request)  # always (dict, status)
-    if isinstance(func_response, tuple) and len(func_response) == 2:
-        data, status_code = func_response
-        return jsonify(data), status_code
-    else:
-        return jsonify(func_response), 200
+    server_status["busy"] = True
+    try:
+        # Capture the function's return value
+        func_response = function_list[cmd_index](request)  # always (dict, status)
+        if isinstance(func_response, tuple) and len(func_response) == 2:
+            data, status_code = func_response
+            return jsonify(data), status_code
+        else:
+            return jsonify(func_response), 200
+    except Exception as e:
+        server_status["busy"] = False
+        return jsonify({"error": f"Function execution failed: {e}"}), 500
+    finally:
+        server_status["busy"] = False
     
+@app.route("/health", methods=["GET"])
+def health():
+    """
+    Health check endpoint.
+    Returns HTTP 200 with a JSON indicating the server is alive.
+    """
+    return jsonify({"status": "healthy", "server_status": "busy" if server_status["busy"] else "idle"}), 200  
 
 @app.route("/status", methods=["GET"])
 def status():
