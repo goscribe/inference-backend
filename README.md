@@ -259,4 +259,15 @@ workspaceId,
 - Make sure to **initialize a session first** (`init_session`) before sending any other commands.  
 - All file uploads require a `File` object from a `<input type="file">` element.  
 - All output JSON responses are displayed in `<pre>` blocks for readability in the frontend.  
-- Errors will be returned as HTTP errors or caught exceptions.  
+- Errors will be returned as HTTP errors or caught exceptions.
+
+
+## Some Notes on Implementation
+### Why choose server-run LLM?
+Most APIs (e.g. ChatGPT) does not support multiple pdf upload and analysis. We use the Gemma multimodal model, which 
+accepts vision and text input. With that, we can flexiblly feed the model with any file that can be depomposed into 
+text, and image components. PDF fits such decomposition, thus also any files that can be safely converted into PDFs.   
+
+**The other advantage** is that server-run LLM can easily be fine-tuned. Currently, we don't have the data for fine-tuning 
+but user-sharing is implemented, such that in the future, when enough users share their self-made of adjusted study guides, 
+flashcards, and worksheets, these data can be collected and used to fine-tune the model.
