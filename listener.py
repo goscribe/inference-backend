@@ -13,7 +13,7 @@ CORS(app)  # allow all origins for frontend JS
 server_status = {"busy": False}
 
 # Define commands and corresponding functions
-command_list = ["init_session", "append_image", "append_pdflike", "set_instruct", "start_LLM_session", "analyse_pdf", "retrieve_full_history", "analyse_img", "generate_study_guide", "generate_flashcard_questions", "generate_flashcard_answers", "generate_worksheet_questions", "generate_worksheet_answers", "generate_mindmap", "inference_from_prompt", "overwrite", "process", "analyze"]  # example commands
+command_list = ["init_session", "append_image", "append_pdflike", "set_instruct", "start_LLM_session", "analyse_pdf", "retrieve_full_history", "analyse_img", "generate_study_guide", "generate_flashcard_questions", "generate_worksheet_questions", "generate_mindmap", "inference_from_prompt"]
 
 url = "http://localhost:11434/api/chat"
 model = "gemma3:27b"  
@@ -262,25 +262,25 @@ def analyse_img(request):
 def generate_study_guide(request):
     global CURRENT_SESSION_ID
     if not CURRENT_SESSION_ID:
-        print("Session not initialized.")
         return {"error": "Session not initialized."}, 400
 
     with open(f"{CURRENT_SESSION_ID}/messages.json", "r") as f:
         messages = json.load(f)
+
     messages = generate_summary(messages)
+
     with open(f"{CURRENT_SESSION_ID}/messages.json", "w") as f:
         json.dump(messages, f, indent=2)
-        
-    last_content = messages[-1].get("content", "")
-    global LAST_RESPONSE
-    LAST_RESPONSE["content"] = last_content
-    print("Generating Study Guide Successful")
-    return {"message": "Generating Study Guide Successful"}, 200
 
-FLASHCARD_Q_AVAILABLE = False
+    last_content = messages[-1].get("content", "")
+
+    print("Generating Study Guide Successful")
+    print("Last message:", messages[-1])
+    return {"last_response": last_content}, 200
+
+
 def generate_flashcard_questions(request):
     global CURRENT_SESSION_ID
-    global FLASHCARD_Q_AVAILABLE
     if not CURRENT_SESSION_ID:
         print("Session not initialized.")
         FLASHCARD_Q_AVAILABLE = False
@@ -299,44 +299,45 @@ def generate_flashcard_questions(request):
     with open(f"{CURRENT_SESSION_ID}/messages.json", "r") as f:
         messages = json.load(f)
     messages = generate_flashcards_q(messages, num_questions, difficulty)
-    with open(f"{CURRENT_SESSION_ID}/messages.json", "w") as f:
-        json.dump(messages, f, indent=2)
-        
-    last_content = messages[-1].get("content", "")
-    global LAST_RESPONSE
-    LAST_RESPONSE["content"] = last_content
     print("Generating Flashcard Questions Successful.")
-    FLASHCARD_Q_AVAILABLE = True
-    return {"message": "Generating Flashcard Questions Successful."}, 200
-
-def generate_flashcard_answers(request):
-    global CURRENT_SESSION_ID
-    global FLASHCARD_Q_AVAILABLE
-    if not CURRENT_SESSION_ID:
-        print("Session not initialized.")
-        FLASHCARD_Q_AVAILABLE = False
-        return {"error": "Session not initialized."}, 400
-    if not FLASHCARD_Q_AVAILABLE:
-        print("No Flashcard Questions Available.")
-        return {"error": "No Flashcard Questions Available."}, 400
-
-    with open(f"{CURRENT_SESSION_ID}/messages.json", "r") as f:
-        messages = json.load(f)
     messages = generate_flashcards_a(messages)
+    print("Generating Flashcard Answers Successful.")
+
+    messages.append({"role": "user", "content": """Now, read off the questions and answers you wrote. Convert them into a JSON file according to this format: 
+    [
+        {"term": "<Question 1>",
+        definition: "<Answer 1>"}, 
+        {"term": "<Question 2>",
+        definition: "<Answer 2>"}, 
+        {"term": "<Question 3>",
+        definition: "<Answer 3>"}, 
+    ]
+    Adhere strictly to this format. When you start your generation. Do not include any texts that does not belong to the JSON.
+    Return ONLY the JSON file following "[..." You shall NOT have any thing like "json" or `` in front, ONLY the raw text for the JSON source!!!
+    Remember, ONLY THE RAW TEXT, not a code block.
+    Be aware of any punctuations that might conflict with JSON syntax. This is extremely important!!! Now, you may begin."""})
+    
+    resp = requests.post(
+        url,
+        json={"model": model, "messages": messages}
+    )
+    messages = update_memory(messages, resp)  
+
     with open(f"{CURRENT_SESSION_ID}/messages.json", "w") as f:
         json.dump(messages, f, indent=2)
-        
+
     last_content = messages[-1].get("content", "")
     global LAST_RESPONSE
     LAST_RESPONSE["content"] = last_content
-    print("Generating Flashcard Answers Successful.")
+    print("Generating Flashcard JSON Successful.")
     FLASHCARD_Q_AVAILABLE = True
-    return {"message": "Generating Flashcard Answers Successful."}, 200
+    return {"last_response": last_content}, 200
 
-WS_Q_AVAILABLE = False
+     
+    
+
 def generate_worksheet_questions(request):
     global CURRENT_SESSION_ID
-    global WS_Q_AVAILABLE
     if not CURRENT_SESSION_ID:
         print("Session not initialized.")
         FLASHCARD_Q_AVAILABLE = False
@@ -355,39 +356,75 @@ def generate_worksheet_questions(request):
     with open(f"{CURRENT_SESSION_ID}/messages.json", "r") as f:
         messages = json.load(f)
     messages = generate_worksheet_q(messages, num_questions, difficulty)
-    with open(f"{CURRENT_SESSION_ID}/messages.json", "w") as f:
-        json.dump(messages, f, indent=2)
-        
-    last_content = messages[-1].get("content", "")
-    global LAST_RESPONSE
-    LAST_RESPONSE["content"] = last_content
     print("Generating Worksheet Questions Successful.")
-    WS_Q_AVAILABLE = True
-    return {"message": "Generating Worksheet Questions Successful."}, 200
-
-def generate_worksheet_answers(request):
-    global CURRENT_SESSION_ID
-    global WS_Q_AVAILABLE
-    if not CURRENT_SESSION_ID:
-        print("Session not initialized.")
-        FLASHCARD_Q_AVAILABLE = False
-        return {"error": "Session not initialized."}, 400
-    if not WS_Q_AVAILABLE:
-        print("No Worksheet Questions Available.")
-        return {"error": "No Worksheet Questions Available."}, 400
-
-    with open(f"{CURRENT_SESSION_ID}/messages.json", "r") as f:
-        messages = json.load(f)
     messages = generate_worksheet_a(messages)
+    print("Generating Worksheet Answers Successful.")
+
+    messages.append({"role": "user", "content": f"""Now, read off the questions and answers you wrote. Convert them into a JSON file according to this format: 
+    {{
+        id: {CURRENT_SESSION_ID},
+        title: '<A Title For Your Worksheet>',
+        description: '<Make a Description for this Worksheet>',
+        difficulty: '<Choice from these: EASY, MEDIUM, HARD>',
+        estimatedTime: '<Estimate how long required to do the questions>',
+        problems: [
+        {{
+          question: '<Question 1>',
+          answer: '<Answer 1>',
+          type: 'TEXT <if the question is not a MCQ, put TEXT here>',
+        }},
+        {{
+          question: '<Question 2>',
+          answer: '<Answer 2>',
+          type: 'TEXT',
+        }},
+        {{
+          question: '<Question 3>',
+          answer: '<Answer 3>',
+          type: 'MULTIPLE_CHOICE <if the question is MCQ, put MULTIPLE_CHOICE here>',
+          options: ['<Option 1>', '<Option 2>', '<Option 3>', ...],
+        }},
+        {{
+          question: '<Question 4>',
+          answer: '<Answer 4>',
+          type: 'NUMERIC <if the answer is one single numerical value, put NUMERIC here>',
+        }},
+        {{
+          question: '<Question 5>',
+          answer: '<Answer 5>',
+          type: 'TRUE_FALSE <if the answer is either true or false, put TRUE_FALSE here>',
+        }},
+        {{
+          question: '<Question 5>',
+          answer: '<Answer 5>',
+          type: 'MATCHING <if the task is to select all matching options, put MATCHING here>',
+          options: ['Option 1', 'Option 2', 'Option 3', ...],
+        }}, 
+        ...
+        ],
+    }}
+    Adhere strictly to this format. When you start your generation. Do not include any texts that does not belong to the JSON.
+    Return ONLY the JSON file following "[..." You shall NOT have any thing like "json" or `` in front, ONLY the raw text for the JSON source!!!
+    Remember, ONLY THE RAW TEXT, not a code block.
+    Be aware of any punctuations that might conflict with JSON syntax. This is extremely important!!! Now, you may begin."""})
+    
+    resp = requests.post(
+        url,
+        json={"model": model, "messages": messages}
+    )
+    messages = update_memory(messages, resp)  
+
     with open(f"{CURRENT_SESSION_ID}/messages.json", "w") as f:
         json.dump(messages, f, indent=2)
-        
+
     last_content = messages[-1].get("content", "")
     global LAST_RESPONSE
     LAST_RESPONSE["content"] = last_content
-    print("Generating Worksheet Answers Successful.")
+    print("Generating Worksheet JSON Successful.")
     FLASHCARD_Q_AVAILABLE = True
-    return {"message": "Generating Worksheet Answers Successful."}, 200
+    return {"last_response": last_content}, 200
+
+    
 
 def generate_mindmap(request):
     global CURRENT_SESSION_ID
@@ -427,10 +464,9 @@ def inference_from_prompt(request):
         json.dump(messages, f, indent=2)
         
     last_content = messages[-1].get("content", "")
-    global LAST_RESPONSE
-    LAST_RESPONSE["content"] = last_content
-    print(f"Prompting Successful")
-    return {"message": "Prompting Successful"}, 200
+    print("Last message:", messages[-1])
+    print("Prompting Successful")
+    return {"last_response": last_content}, 200
     
     
 
@@ -446,7 +482,7 @@ def analyze_fn(msg):
     print("Running analyze_fn with message:", msg)
     # Put your logic here
 
-function_list = [init_session, append_image, append_pdflike, set_instruct, start_LLM_session, analyse_pdf, retrieve_full_history, analyse_img, generate_study_guide, generate_flashcard_questions, generate_flashcard_answers, generate_worksheet_questions, generate_worksheet_answers, generate_mindmap, inference_from_prompt, overwrite_fn, process_fn, analyze_fn]
+function_list = [init_session, append_image, append_pdflike, set_instruct, start_LLM_session, analyse_pdf, retrieve_full_history, analyse_img, generate_study_guide, generate_flashcard_questions, generate_worksheet_questions, generate_mindmap, inference_from_prompt]
 
 @app.route("/upload", methods=["POST"])
 def upload_content():
@@ -467,17 +503,27 @@ def upload_content():
         return jsonify({"error": f"Unknown command '{command}'"}), 400
 
     # Set busy, run function synchronously, then set idle
-    server_status["busy"] = True
-    try:
-        function_list[cmd_index](request)  # pass raw request/message
-    except Exception as e:
-        server_status["busy"] = False
-        return jsonify({"error": f"Function execution failed: {e}"}), 500
-    finally:
-        server_status["busy"] = False
-
-
-    return jsonify({"message": f"Command '{command}' executed successfully"}), 200
+    # server_status["busy"] = True
+    # try:
+    #     # Capture the function's return value
+    #     func_response = function_list[cmd_index](request)  # always (dict, status)
+    #     if isinstance(func_response, tuple) and len(func_response) == 2:
+    #         data, status_code = func_response
+    #         return jsonify(data), status_code
+    #     else:
+    #         return jsonify(func_response), 200
+    # except Exception as e:
+    #     server_status["busy"] = False
+    #     return jsonify({"error": f"Function execution failed: {e}"}), 500
+    # finally:
+    #     server_status["busy"] = False
+    func_response = function_list[cmd_index](request)  # always (dict, status)
+    if isinstance(func_response, tuple) and len(func_response) == 2:
+        data, status_code = func_response
+        return jsonify(data), status_code
+    else:
+        return jsonify(func_response), 200
+    
 
 @app.route("/status", methods=["GET"])
 def status():
