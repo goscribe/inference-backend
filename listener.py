@@ -3,7 +3,7 @@ from flask_cors import CORS
 import os
 import json
 from fileConverter import *
-from LLM import read_pdf, update_memory, read_pdf_images, read_images, generate_summary, generate_flashcards_q, generate_flashcards_a
+from LLM import read_pdf, update_memory, read_pdf_images, read_images, generate_summary, generate_flashcards_q, generate_flashcards_a, generate_worksheet_q, generate_worksheet_a
 import requests
 
 app = Flask(__name__)
@@ -13,7 +13,7 @@ CORS(app)  # allow all origins for frontend JS
 server_status = {"busy": False}
 
 # Define commands and corresponding functions
-command_list = ["init_session", "append_image", "append_pdflike", "set_instruct", "start_LLM_session", "analyse_pdf", "retrieve_full_history", "analyse_img", "generate_study_guide", "generate_flashcard_questions", "generate_flashcard_answers", "overwrite", "process", "analyze"]  # example commands
+command_list = ["init_session", "append_image", "append_pdflike", "set_instruct", "start_LLM_session", "analyse_pdf", "retrieve_full_history", "analyse_img", "generate_study_guide", "generate_flashcard_questions", "generate_flashcard_answers", "generate_worksheet_questions", "generate_worksheet_answers", "overwrite", "process", "analyze"]  # example commands
 
 url = "http://localhost:11434/api/chat"
 model = "gemma3:27b"  
@@ -329,9 +329,65 @@ def generate_flashcard_answers(request):
     last_content = messages[-1].get("content", "")
     global LAST_RESPONSE
     LAST_RESPONSE["content"] = last_content
-    print("Generating Flashcard Questions Successful.")
+    print("Generating Flashcard Answers Successful.")
     FLASHCARD_Q_AVAILABLE = True
-    return {"message": "Generating Flashcard Questions Successful."}, 200
+    return {"message": "Generating Flashcard Answers Successful."}, 200
+
+WS_Q_AVAILABLE = False
+def generate_worksheet_questions(request):
+    global CURRENT_SESSION_ID
+    global WS_Q_AVAILABLE
+    if not CURRENT_SESSION_ID:
+        print("Session not initialized.")
+        FLASHCARD_Q_AVAILABLE = False
+        return {"error": "Session not initialized."}, 400
+
+    num_questions = request.form.get("num_questions")
+    difficulty = request.form.get("difficulty")
+
+    if not num_questions:
+        print("Number of Questions not Specified.")
+        return {"error": "Number of Questions not Specified."}, 400
+    if not difficulty:
+        print("Difficulty not Specified.")
+        return {"error": "Difficulty not Specified."}, 400
+
+    with open(f"{CURRENT_SESSION_ID}/messages.json", "r") as f:
+        messages = json.load(f)
+    messages = generate_worksheet_q(messages, num_questions, difficulty)
+    with open(f"{CURRENT_SESSION_ID}/messages.json", "w") as f:
+        json.dump(messages, f, indent=2)
+        
+    last_content = messages[-1].get("content", "")
+    global LAST_RESPONSE
+    LAST_RESPONSE["content"] = last_content
+    print("Generating Worksheet Questions Successful.")
+    WS_Q_AVAILABLE = True
+    return {"message": "Generating Worksheet Questions Successful."}, 200
+
+def generate_worksheet_answers(request):
+    global CURRENT_SESSION_ID
+    global WS_Q_AVAILABLE
+    if not CURRENT_SESSION_ID:
+        print("Session not initialized.")
+        FLASHCARD_Q_AVAILABLE = False
+        return {"error": "Session not initialized."}, 400
+    if not WS_Q_AVAILABLE:
+        print("No Worksheet Questions Available.")
+        return {"error": "No Worksheet Questions Available."}, 400
+
+    with open(f"{CURRENT_SESSION_ID}/messages.json", "r") as f:
+        messages = json.load(f)
+    messages = generate_worksheet_a(messages)
+    with open(f"{CURRENT_SESSION_ID}/messages.json", "w") as f:
+        json.dump(messages, f, indent=2)
+        
+    last_content = messages[-1].get("content", "")
+    global LAST_RESPONSE
+    LAST_RESPONSE["content"] = last_content
+    print("Generating Worksheet Answers Successful.")
+    FLASHCARD_Q_AVAILABLE = True
+    return {"message": "Generating Worksheet Answers Successful."}, 200
     
 
 def overwrite_fn(msg):
@@ -346,7 +402,7 @@ def analyze_fn(msg):
     print("Running analyze_fn with message:", msg)
     # Put your logic here
 
-function_list = [init_session, append_image, append_pdflike, set_instruct, start_LLM_session, analyse_pdf, retrieve_full_history, analyse_img, generate_study_guide, generate_flashcard_questions, generate_flashcard_answers, overwrite_fn, process_fn, analyze_fn]
+function_list = [init_session, append_image, append_pdflike, set_instruct, start_LLM_session, analyse_pdf, retrieve_full_history, analyse_img, generate_study_guide, generate_flashcard_questions, generate_flashcard_answers, generate_worksheet_questions, generate_worksheet_answers, overwrite_fn, process_fn, analyze_fn]
 
 @app.route("/upload", methods=["POST"])
 def upload_content():
