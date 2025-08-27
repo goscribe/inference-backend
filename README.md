@@ -243,6 +243,49 @@ formData.append("prompt", "<PROMPT_STR>");
 
 ---
 
+## Worksheet JSON Format:
+```
+workspaceId,
+      title: `New Worksheet ${worksheets.length + 1}`,
+      description: 'Generated practice problems',
+      difficulty: 'MEDIUM',
+      estimatedTime: '30 min',
+      problems: [
+        {
+          question: 'Sample question 1',
+          answer: 'Sample answer 1',
+          type: 'TEXT',
+        },
+        {
+          question: 'Sample question 2',
+          answer: 'Sample answer 2',
+          type: 'TEXT',
+        },
+        {
+          question: 'Sample question 3',
+          answer: 'Sample answer 3',
+          type: 'MULTIPLE_CHOICE',
+          options: ['Option 1', 'Option 2', 'Option 3', 'Option 4'],
+        },
+        {
+          question: 'Sample question 4',
+          answer: 'Sample answer 4',
+          type: 'NUMERIC',
+        },
+        {
+          question: 'Sample question 5',
+          answer: 'Sample answer 5',
+          type: 'TRUE_FALSE',
+        },
+        {
+          question: 'Sample question 6',
+          answer: 'Sample answer 6',
+          type: 'MATCHING',
+          options: ['Option 1', 'Option 2', 'Option 3'],
+        }
+      ],
+```
+
 ### Notes
 
 - Make sure to **initialize a session first** (`init_session`) before sending any other commands.  
