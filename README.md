@@ -231,6 +231,22 @@ formData.append("command", "retrieve_full_history");
 
 ---
 
+## 14. Inference from Prompt
+
+**Command:** `inference_from_prompt`  
+**FormData:**  
+```js
+const formData = new FormData();
+formData.append("command", "inference_from_prompt");
+formData.append("prompt", "<PROMPT_STR>");
+```
+
+**Expected Status:**  
+- Success: `"Prompting Successful"`  
+- Failure: `"Error: <HTTP_STATUS> <STATUS_TEXT>"`  
+
+---
+
 ### Notes
 
 - Make sure to **initialize a session first** (`init_session`) before sending any other commands.  
