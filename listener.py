@@ -3,7 +3,7 @@ from flask_cors import CORS
 import os
 import json
 from fileConverter import *
-from LLM import read_pdf, update_memory, read_pdf_images, read_images, generate_summary, generate_flashcards_q, generate_flashcards_a, generate_worksheet_q, generate_worksheet_a
+from LLM import read_pdf, update_memory, read_pdf_images, read_images, generate_summary, generate_flashcards_q, generate_flashcards_a, generate_worksheet_q, generate_worksheet_a, generate_mindmap_mermaid, prompt_input
 import requests
 
 app = Flask(__name__)
@@ -13,7 +13,7 @@ CORS(app)  # allow all origins for frontend JS
 server_status = {"busy": False}
 
 # Define commands and corresponding functions
-command_list = ["init_session", "append_image", "append_pdflike", "set_instruct", "start_LLM_session", "analyse_pdf", "retrieve_full_history", "analyse_img", "generate_study_guide", "generate_flashcard_questions", "generate_flashcard_answers", "generate_worksheet_questions", "generate_worksheet_answers", "overwrite", "process", "analyze"]  # example commands
+command_list = ["init_session", "append_image", "append_pdflike", "set_instruct", "start_LLM_session", "analyse_pdf", "retrieve_full_history", "analyse_img", "generate_study_guide", "generate_flashcard_questions", "generate_flashcard_answers", "generate_worksheet_questions", "generate_worksheet_answers", "generate_mindmap", "inference_from_prompt", "overwrite", "process", "analyze"]  # example commands
 
 url = "http://localhost:11434/api/chat"
 model = "gemma3:27b"  
@@ -388,6 +388,50 @@ def generate_worksheet_answers(request):
     print("Generating Worksheet Answers Successful.")
     FLASHCARD_Q_AVAILABLE = True
     return {"message": "Generating Worksheet Answers Successful."}, 200
+
+def generate_mindmap(request):
+    global CURRENT_SESSION_ID
+    if not CURRENT_SESSION_ID:
+        print("Session not initialized.")
+        return {"error": "Session not initialized."}, 400
+
+    with open(f"{CURRENT_SESSION_ID}/messages.json", "r") as f:
+        messages = json.load(f)
+    messages = generate_mindmap_mermaid(messages)
+    with open(f"{CURRENT_SESSION_ID}/messages.json", "w") as f:
+        json.dump(messages, f, indent=2)
+        
+    last_content = messages[-1].get("content", "")
+    global LAST_RESPONSE
+    LAST_RESPONSE["content"] = last_content
+    print("Generate Mindmap Successful")
+    return {"message": "Generate Mindmap Successful"}, 200
+
+def inference_from_prompt(request):
+    global CURRENT_SESSION_ID
+    if not CURRENT_SESSION_ID:
+        print("Session not initialized.")
+        return {"error": "Session not initialized."}, 400
+
+    prompt = request.form.get("prompt")
+    if not prompt:
+        print("No prompt input.")
+        return {"error": "No prompt input."}, 400
+
+    with open(f"{CURRENT_SESSION_ID}/messages.json", "r") as f:
+        messages = json.load(f)
+        
+    messages = prompt_input(messages, prompt)
+    
+    with open(f"{CURRENT_SESSION_ID}/messages.json", "w") as f:
+        json.dump(messages, f, indent=2)
+        
+    last_content = messages[-1].get("content", "")
+    global LAST_RESPONSE
+    LAST_RESPONSE["content"] = last_content
+    print(f"Prompting Successful")
+    return {"message": "Prompting Successful"}, 200
+    
     
 
 def overwrite_fn(msg):
@@ -402,7 +446,7 @@ def analyze_fn(msg):
     print("Running analyze_fn with message:", msg)
     # Put your logic here
 
-function_list = [init_session, append_image, append_pdflike, set_instruct, start_LLM_session, analyse_pdf, retrieve_full_history, analyse_img, generate_study_guide, generate_flashcard_questions, generate_flashcard_answers, generate_worksheet_questions, generate_worksheet_answers, overwrite_fn, process_fn, analyze_fn]
+function_list = [init_session, append_image, append_pdflike, set_instruct, start_LLM_session, analyse_pdf, retrieve_full_history, analyse_img, generate_study_guide, generate_flashcard_questions, generate_flashcard_answers, generate_worksheet_questions, generate_worksheet_answers, generate_mindmap, inference_from_prompt, overwrite_fn, process_fn, analyze_fn]
 
 @app.route("/upload", methods=["POST"])
 def upload_content():
