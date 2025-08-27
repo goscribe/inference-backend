@@ -147,7 +147,9 @@ formData.append("command", "generate_study_guide");
 ```
 
 **Status:**  
-- Success: JSON string with study guide contents.  
+- Success: JSON string.
+- Faliure: JSON string reporting error encountered.
+- Generated study guide at [https://txp-tckxn64wn5vtgip72-kzoemq8qw-custom.service.onethingrobot.com/last_response](https://txp-tckxn64wn5vtgip72-kzoemq8qw-custom.service.onethingrobot.com/last_response)
 
 ---
 
@@ -162,7 +164,9 @@ formData.append("difficulty", "<easy|medium|hard>");
 ```
 
 **Status:**  
-- Success: JSON string with questions  
+- Success: JSON string.
+- Faliure: JSON string reporting error encountered.
+- Generated questions at [https://txp-tckxn64wn5vtgip72-kzoemq8qw-custom.service.onethingrobot.com/last_response](https://txp-tckxn64wn5vtgip72-kzoemq8qw-custom.service.onethingrobot.com/last_response)
 
 ---
 
@@ -175,11 +179,46 @@ formData.append("command", "generate_flashcard_answers");
 ```
 
 **Status:**  
-- Success: JSON string with answers  
+- Success: JSON string.
+- Faliure: JSON string reporting error encountered.
+- Generated answers at [https://txp-tckxn64wn5vtgip72-kzoemq8qw-custom.service.onethingrobot.com/last_response](https://txp-tckxn64wn5vtgip72-kzoemq8qw-custom.service.onethingrobot.com/last_response)
 
 ---
 
-## 11. Retrieve Full History
+## 11. Generate Worksheet Questions
+
+**Command:** `generate_worksheet_questions`  
+**FormData:**  
+```js
+formData.append("command", "generate_worksheet_questions");
+formData.append("num_questions", "<NUMBER>");
+formData.append("difficulty", "<easy|medium|hard>");
+```
+
+**Status:**  
+- Success: JSON string.
+- Faliure: JSON string reporting error encountered.
+- Generated questions at [https://txp-tckxn64wn5vtgip72-kzoemq8qw-custom.service.onethingrobot.com/last_response](https://txp-tckxn64wn5vtgip72-kzoemq8qw-custom.service.onethingrobot.com/last_response)
+
+---
+
+## 12. Generate Worksheet Answers
+
+**Command:** `generate_worksheet_answers`  
+**FormData:**  
+```js
+formData.append("command", "generate_worksheet_answers");
+```
+
+**Status:**  
+- Success: JSON string.
+- Faliure: JSON string reporting error encountered.
+- Generated answers at [https://txp-tckxn64wn5vtgip72-kzoemq8qw-custom.service.onethingrobot.com/last_response](https://txp-tckxn64wn5vtgip72-kzoemq8qw-custom.service.onethingrobot.com/last_response)
+
+---
+
+
+## 13. Retrieve Full History
 
 **Command:** `retrieve_full_history`  
 **FormData:**  
