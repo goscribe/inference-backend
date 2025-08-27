@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Session + Upload Test</title>
+</head>
+<body>
+  <h2>Init Session</h2>
+  <input type="text" id="sessionId" placeholder="Enter Session ID">
+  <button onclick="initSession()">Init</button>
+  <p id="status"></p>
+
+  <hr>
+
+  <h2>Upload Image</h2>
+  <input type="file" id="imageFile" accept="image/*">
+  <button onclick="uploadImage()">Upload</button>
+  <p id="uploadStatus"></p> <!-- ✅ added -->
+
+  <h2>Upload PDF-like</h2>
+  <input type="file" id="fileInput" accept=".doc,.docx,.pdf,.xls,.xlsx"/>
+  <button onclick="uploadPDFLike()">Upload</button>
+  <p id="uploadStatus"></p> <!-- ✅ reuse or make unique if you want separate statuses -->
+
+  <hr>
+
+  <h2>Set Instruction Text</h2>
+  <input type="text" id="instructionText" placeholder="Enter instruction text">
+  <button onclick="setInstruction()">Set Instruction</button>
+  <p id="instructionStatus"></p>
+
+  <hr>
+
+  <h2>Start LLM Session</h2>
+  <button onclick="startLLMSession()">Start LLM</button>
+  <p id="llmStatus"></p>
+
+  <hr>
+
+  <h2>Analyse PDF</h2>
+  <button onclick="analysePDF()">Analyse PDF</button>
+  <p id="analyseStatus"></p>
+
+  <hr>
+
+  <h2>Analyse Image</h2>
+  <button onclick="analyseImage()">Analyse Image</button>
+  <p id="analyseImgStatus"></p>
+
+  <hr>
+
+  <h2>Generate Study Guide</h2>
+  <button onclick="generateStudyGuide()">Generate Study Guide</button>
+  <pre id="studyGuideStatus"></pre> <!-- ✅ fixed ID + use <pre> for long text -->
+
+  <hr>
+
+  <h2>Generate Flashcard Questions</h2>
+  <label for="numQuestions">Number of Questions:</label>
+  <input type="number" id="numQuestions" min="1" placeholder="e.g. 10">
+
+  <label for="difficulty">Difficulty:</label>
+  <select id="difficulty">
+    <option value="easy">Easy</option>
+    <option value="medium">Medium</option>
+    <option value="hard">Hard</option>
+  </select>
+
+  <button onclick="generateFlashcards()">Generate Flashcards</button>
+  <pre id="flashcardStatus"></pre> <!-- ✅ changed to <pre> -->
+
+  <hr>
+
+  <h2>Generate Flashcard Answers</h2>
+  <button onclick="generateFlashcardAnswers()">Generate Answers</button>
+  <pre id="flashcardAnswersStatus"></pre> <!-- ✅ changed to <pre> -->
+
+  <hr>
+
+  <h2>Retrieve Full History</h2>
+  <button onclick="retrieveFullHistory()">Retrieve</button>
+  <pre id="historyStatus"></pre> <!-- ✅ changed to <pre> -->
+
+  <script>
+    let currentSessionId = null;
+
+    async function initSession() {
+      const id = document.getElementById("sessionId").value;
+      if (!id) { alert("Please enter a session id"); return; }
+
+      const formData = new FormData();
+      formData.append("command", "init_session");
+      formData.append("id", id);
+
+      try {
+        const response = await fetch("https://txp-tckxn64wn5vtgip72-kzoemq8qw-custom.service.onethingrobot.com/upload", {
+          method: "POST", body: formData
+        });
+
+        if (response.ok) {
+          currentSessionId = id;
+          document.getElementById("status").innerText = "Session initialized successfully!";
+        } else {
+          document.getElementById("status").innerText = "Error: " + response.status + " " + response.statusText;
+        }
+      } catch (err) {
+        document.getElementById("status").innerText = "Error: " + err;
+      }
+    }
+
+    async function uploadImage() {
+      if (!currentSessionId) { alert("Please init a session first."); return; }
+      const fileInput = document.getElementById("imageFile");
+      if (fileInput.files.length === 0) { alert("Please select an image to upload"); return; }
+
+      const formData = new FormData();
+      formData.append("command", "append_image");
+      formData.append("file", fileInput.files[0]);
+
+      try {
+        const response = await fetch("https://txp-tckxn64wn5vtgip72-kzoemq8qw-custom.service.onethingrobot.com/upload", {
+          method: "POST", body: formData
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          document.getElementById("uploadStatus").innerText = "Upload success: " + result.message;
+        } else {
+          document.getElementById("uploadStatus").innerText = "Error: " + response.status + " " + response.statusText;
+        }
+      } catch (err) {
+        document.getElementById("uploadStatus").innerText = "Error: " + err;
+      }
+    }
+
+    async function uploadPDFLike() {
+      if (!currentSessionId) { alert("Please init a session first."); return; }
+      const fileInput = document.getElementById("fileInput");
+      if (fileInput.files.length === 0) { alert("Please select a file to upload"); return; }
+
+      const formData = new FormData();
+      formData.append("command", "append_pdflike");
+      formData.append("file", fileInput.files[0]);
+
+      try {
+        const response = await fetch("https://txp-tckxn64wn5vtgip72-kzoemq8qw-custom.service.onethingrobot.com/upload", {
+          method: "POST", body: formData
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          document.getElementById("uploadStatus").innerText = "Upload success: " + result.message;
+        } else {
+          document.getElementById("uploadStatus").innerText = "Error: " + response.status + " " + response.statusText;
+        }
+      } catch (err) {
+        document.getElementById("uploadStatus").innerText = "Error: " + err;
+      }
+    }
+
+    async function setInstruction() {
+      if (!currentSessionId) { alert("Please init a session first."); return; }
+      const instructText = document.getElementById("instructionText").value;
+      if (!instructText) { alert("Please enter instruction text"); return; }
+
+      const formData = new FormData();
+      formData.append("command", "set_instruct");
+      formData.append("instruction_text", instructText);
+
+      try {
+        const response = await fetch("https://txp-tckxn64wn5vtgip72-kzoemq8qw-custom.service.onethingrobot.com/upload", {
+          method: "POST", body: formData
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          document.getElementById("instructionStatus").innerText = result.message;
+        } else {
+          document.getElementById("instructionStatus").innerText = "Error: " + response.status + " " + response.statusText;
+        }
+      } catch (err) {
+        document.getElementById("instructionStatus").innerText = "Error: " + err;
+      }
+    }
+
+    async function startLLMSession() {
+      if (!currentSessionId) { alert("Please init a session first."); return; }
+
+      const formData = new FormData();
+      formData.append("command", "start_LLM_session");
+
+      try {
+        const response = await fetch("https://txp-tckxn64wn5vtgip72-kzoemq8qw-custom.service.onethingrobot.com/upload", {
+          method: "POST", body: formData
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          document.getElementById("llmStatus").innerText = "LLM session started: " + result.message;
+        } else {
+          document.getElementById("llmStatus").innerText = "Error: " + response.status + " " + response.statusText;
+        }
+      } catch (err) {
+        document.getElementById("llmStatus").innerText = "Error: " + err;
+      }
+    }
+
+    async function analysePDF() {
+      if (!currentSessionId) { alert("Please init a session first."); return; }
+
+      const formData = new FormData();
+      formData.append("command", "analyse_pdf");
+
+      try {
+        const response = await fetch("https://txp-tckxn64wn5vtgip72-kzoemq8qw-custom.service.onethingrobot.com/upload", {
+          method: "POST", body: formData
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          document.getElementById("analyseStatus").innerText = "PDF analysis started: " + result.message;
+        } else {
+          document.getElementById("analyseStatus").innerText = "Error: " + response.status + " " + response.statusText;
+        }
+      } catch (err) {
+        document.getElementById("analyseStatus").innerText = "Error: " + err;
+      }
+    }
+
+    async function analyseImage() {
+      if (!currentSessionId) { alert("Please init a session first."); return; }
+
+      const formData = new FormData();
+      formData.append("command", "analyse_img");
+
+      try {
+        const response = await fetch("https://txp-tckxn64wn5vtgip72-kzoemq8qw-custom.service.onethingrobot.com/upload", {
+          method: "POST", body: formData
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          document.getElementById("analyseImgStatus").innerText = "Image analysis started: " + result.message;
+        } else {
+          document.getElementById("analyseImgStatus").innerText = "Error: " + response.status + " " + response.statusText;
+        }
+      } catch (err) {
+        document.getElementById("analyseImgStatus").innerText = "Error: " + err;
+      }
+    }
+
+    async function generateStudyGuide() {
+      if (!currentSessionId) { alert("Please init a session first."); return; }
+
+      const formData = new FormData();
+      formData.append("command", "generate_study_guide");
+
+      try {
+        const response = await fetch("https://txp-tckxn64wn5vtgip72-kzoemq8qw-custom.service.onethingrobot.com/upload", {
+          method: "POST", body: formData
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          document.getElementById("studyGuideStatus").innerText = JSON.stringify(result, null, 2);
+        } else {
+          document.getElementById("studyGuideStatus").innerText = "Error: " + response.status + " " + response.statusText;
+        }
+      } catch (err) {
+        document.getElementById("studyGuideStatus").innerText = "Error: " + err;
+      }
+    }
+
+    async function retrieveFullHistory() {
+      if (!currentSessionId) { alert("Please init a session first."); return; }
+
+      const formData = new FormData();
+      formData.append("command", "retrieve_full_history");
+
+      try {
+        const response = await fetch("https://txp-tckxn64wn5vtgip72-kzoemq8qw-custom.service.onethingrobot.com/upload", {
+          method: "POST", body: formData
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          document.getElementById("historyStatus").innerText = JSON.stringify(result, null, 2);
+        } else {
+          document.getElementById("historyStatus").innerText = "Error: " + response.status + " " + response.statusText;
+        }
+      } catch (err) {
+        document.getElementById("historyStatus").innerText = "Error: " + err;
+      }
+    }
+
+    async function generateFlashcards() {
+      if (!currentSessionId) { alert("Please init a session first."); return; }
+
+      const numQuestions = document.getElementById("numQuestions").value;
+      const difficulty = document.getElementById("difficulty").value;
+
+      if (!numQuestions || numQuestions <= 0) {
+        alert("Please enter a valid number of questions");
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append("command", "generate_flashcard_questions");
+      formData.append("num_questions", numQuestions);
+      formData.append("difficulty", difficulty);
+
+      try {
+        const response = await fetch("https://txp-tckxn64wn5vtgip72-kzoemq8qw-custom.service.onethingrobot.com/upload", {
+          method: "POST", body: formData
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          document.getElementById("flashcardStatus").innerText = JSON.stringify(result, null, 2);
+        } else {
+          document.getElementById("flashcardStatus").innerText = "Error: " + response.status + " " + response.statusText;
+        }
+      } catch (err) {
+        document.getElementById("flashcardStatus").innerText = "Error: " + err;
+      }
+    }
+
+    async function generateFlashcardAnswers() {
+      if (!currentSessionId) { alert("Please init a session first."); return; }
+
+      const formData = new FormData();
+      formData.append("command", "generate_flashcard_answers");
+
+      try {
+        const response = await fetch("https://txp-tckxn64wn5vtgip72-kzoemq8qw-custom.service.onethingrobot.com/upload", {
+          method: "POST", body: formData
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          document.getElementById("flashcardAnswersStatus").innerText = JSON.stringify(result, null, 2);
+        } else {
+          document.getElementById("flashcardAnswersStatus").innerText = "Error: " + response.status + " " + response.statusText;
+        }
+      } catch (err) {
+        document.getElementById("flashcardAnswersStatus").innerText = "Error: " + err;
+      }
+    }
+  </script>
+</body>
+</html>
