@@ -1,6 +1,6 @@
 # Session + Upload Frontend
 
-This frontend allows you to initialize a session, upload images and PDF-like files, set instructions, start LLM sessions, analyse files, generate study guides and flashcards, and retrieve full history.
+This frontend allows you to initialize a session, upload images and PDF-like files, set instructions, start LLM sessions, analyse files, generate study guides, flashcards, worksheets, mindmaps, and retrieve history.
 
 All communication is done via `POST` requests to the server endpoint:
 
@@ -17,29 +17,13 @@ Each request uses `FormData` with a `command` key and optional additional fields
 **Command:** `init_session`  
 **FormData:**  
 ```js
-const formData = new FormData();
 formData.append("command", "init_session");
 formData.append("id", "<SESSION_ID>");
 ```
 
-**JavaScript Snippet:**  
-```js
-async function initSession() {
-  const formData = new FormData();
-  formData.append("command", "init_session");
-  formData.append("id", "my_session_id");
-
-  const response = await fetch("https://txp-tckxn64wn5vtgip72-kzoemq8qw-custom.service.onethingrobot.com/upload", {
-    method: "POST", body: formData
-  });
-  const result = await response.json();
-  console.log(result);
-}
-```
-
-**Expected Status:**  
-- Success: `"Session initialized successfully!"`  
-- Failure: `"Error: <HTTP_STATUS> <STATUS_TEXT>"`  
+**Status:**  
+- Success: `{"message": "Session '<SESSION_ID>' initialized successfully"}`  
+- Failure: `{"error": "No session ID provided"}`  
 
 ---
 
@@ -52,22 +36,9 @@ formData.append("command", "append_image");
 formData.append("file", <File Object>);
 ```
 
-**JavaScript Snippet:**  
-```js
-async function uploadImage() {
-  const formData = new FormData();
-  formData.append("command", "append_image");
-  formData.append("file", fileInput.files[0]);
-
-  const response = await fetch(serverURL, { method: "POST", body: formData });
-  const result = await response.json();
-  console.log(result);
-}
-```
-
-**Expected Status:**  
-- Success: `"Upload success: <message>"`  
-- Failure: `"Error: <HTTP_STATUS> <STATUS_TEXT>"`  
+**Status:**  
+- Success: `{"message": "File saved at: <path>: Success"}`  
+- Failure: `{"error": "...error details..."}`  
 
 ---
 
@@ -94,8 +65,8 @@ formData.append("instruction_text", "<INSTRUCTION_TEXT>");
 ```
 
 **Status:**  
-- Success: `"Instruction Text Reset Successful"`  
-- Failure: `"Error: <HTTP_STATUS> <STATUS_TEXT>"`  
+- Success: `{"message": "Instruction Text Reset Successful"}`  
+- Failure: `{"error": "...error details..."}`  
 
 ---
 
@@ -108,7 +79,8 @@ formData.append("command", "start_LLM_session");
 ```
 
 **Status:**  
-- Success: `"LLM session started: <message>"`  
+- Success: `{"message": "Start LLM Session Successful"}`  
+- Failure: `{"error": "...error details..."}`  
 
 ---
 
@@ -121,7 +93,8 @@ formData.append("command", "analyse_pdf");
 ```
 
 **Status:**  
-- Success: `"PDF analysis finished: <message>"`  
+- Success: `{"message": "Analyse PDFs Successful"}`  
+- Failure: `{"error": "...error details..."}`  
 
 ---
 
@@ -134,7 +107,8 @@ formData.append("command", "analyse_img");
 ```
 
 **Status:**  
-- Success: `"Image analysis finished: <message>"`  
+- Success: `{"message": "Analysing Images Successful"}`  
+- Failure: `{"error": "...error details..."}`  
 
 ---
 
@@ -147,8 +121,8 @@ formData.append("command", "generate_study_guide");
 ```
 
 **Status:**  
-- Success: JSON string `{"last_response": "<generated content>"}`
-- Faliure: JSON string reporting error encountered.
+- Success: `{"last_response": "<generated content>"}`  
+- Failure: `{"error": "...error details..."}`  
 
 ---
 
@@ -163,26 +137,12 @@ formData.append("difficulty", "<easy|medium|hard>");
 ```
 
 **Status:**  
-- Success: JSON string `{"last_response": "<generated content>"}`
-- Faliure: JSON string reporting error encountered.
+- Success: `{"last_response": "<JSON flashcards>"}`
+- Failure: `{"error": "...error details..."}`  
 
 ---
 
-## 10. Generate Flashcard Answers
-
-**Command:** `generate_flashcard_answers`  
-**FormData:**  
-```js
-formData.append("command", "generate_flashcard_answers");
-```
-
-**Status:**  
-- Success: JSON string `{"last_response": "<generated content>"}`
-- Faliure: JSON string reporting error encountered.
-
----
-
-## 11. Generate Worksheet Questions
+## 10. Generate Worksheet Questions
 
 **Command:** `generate_worksheet_questions`  
 **FormData:**  
@@ -193,28 +153,26 @@ formData.append("difficulty", "<easy|medium|hard>");
 ```
 
 **Status:**  
-- Success: JSON string `{"last_response": "<generated content>"}`
-- Faliure: JSON string reporting error encountered.
-
+- Success: `{"last_response": "<JSON worksheet>"}`
+- Failure: `{"error": "...error details..."}`  
 
 ---
 
-## 12. Generate Worksheet Answers
+## 11. Generate Mindmap
 
-**Command:** `generate_worksheet_answers`  
+**Command:** `generate_mindmap`  
 **FormData:**  
 ```js
-formData.append("command", "generate_worksheet_answers");
+formData.append("command", "generate_mindmap");
 ```
 
 **Status:**  
-- Success: JSON string `{"last_response": "<generated content>"}`
-- Faliure: JSON string reporting error encountered.
+- Success: `{"message": "Generate Mindmap Successful"}`  
+- Failure: `{"error": "...error details..."}`  
 
 ---
 
-
-## 13. Retrieve Full History
+## 12. Retrieve Full History
 
 **Command:** `retrieve_full_history`  
 **FormData:**  
@@ -223,25 +181,35 @@ formData.append("command", "retrieve_full_history");
 ```
 
 **Status:**  
-- Success: JSON string containing full session message history  
+- Success: `{"message": "Full History Uploaded."}`  
+- Failure: `{"error": "...error details..."}`  
+
+> To actually fetch the history, call the separate endpoint:  
+> `GET /full_history` → `{"full_history": [...messages...]}`  
 
 ---
 
-## 14. Inference from Prompt
+## 13. Inference from Prompt
 
 **Command:** `inference_from_prompt`  
 **FormData:**  
 ```js
-const formData = new FormData();
 formData.append("command", "inference_from_prompt");
-formData.append("prompt", "<PROMPT_STR>");
+formData.append("prompt", "<PROMPT_TEXT>");
 ```
 
-**Expected Status:**  
-- Success: JSON string `{"last_response": "<generated content>"}`
-- Failure: `"Error: <HTTP_STATUS> <STATUS_TEXT>"`  
+**Status:**  
+- Success: `{"last_response": "<generated content>"}`  
+- Failure: `{"error": "...error details..."}`  
 
 ---
+
+### Notes
+
+- Always run `init_session` first before any other command.  
+- Uploads require valid `File` objects.  
+- Errors always come as JSON: `{"error": "...message..."}`.  
+- `generate_flashcard_answers` and `generate_worksheet_answers` are not separate commands (handled inside their respective question-generation commands).  
 
 ## Worksheet JSON Format:
 ```
