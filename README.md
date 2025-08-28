@@ -169,7 +169,7 @@ formData.append("command", "generate_study_guide");
 ```
 
 **Status:**  
-- Success: `{"last_response": "<generated content>"}`  
+- Success: `{"markdown": "<generated markdown content>", "mermaid": "<mindmap mermaid source>"}`  
 - Failure: `{"error": "...error details..."}`  
 
 ---
