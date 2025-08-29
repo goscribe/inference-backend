@@ -1,6 +1,6 @@
-# Session + Upload Frontend
+# Sendable Requests to Server
 
-This frontend allows you to initialize a session, upload images and PDF-like files, set instructions, start LLM sessions, analyse files, generate study guides, flashcards, worksheets, mindmaps, and retrieve history.
+These requests allows you to initialize a session, upload images and PDF-like files, set instructions, start LLM sessions, analyse files, generate study guides, flashcards, worksheets, mindmaps, and retrieve history.
 
 All communication is done via `POST` requests to the server endpoint:
 
