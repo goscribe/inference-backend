@@ -7,6 +7,7 @@ from LLM import read_pdf, update_memory, read_pdf_images, read_images, generate_
 import requests
 from markdownConvertor import *
 converter = MarkdownToEditorJS()
+import shutil
 
 app = Flask(__name__)
 CORS(app)  # allow all origins for frontend JS
@@ -15,7 +16,7 @@ CORS(app)  # allow all origins for frontend JS
 server_status = {"busy": False}
 
 # Define commands and corresponding functions
-command_list = ["init_session", "append_image", "append_pdflike", "set_instruct", "start_LLM_session", "analyse_pdf", "retrieve_full_history", "analyse_img", "generate_study_guide", "generate_flashcard_questions", "generate_worksheet_questions", "generate_mindmap", "inference_from_prompt"]
+command_list = ["init_session", "restore_session", "append_image", "append_pdflike", "remove_img", "remove_pdf", "set_instruct", "start_LLM_session", "analyse_pdf", "retrieve_full_history", "analyse_img", "generate_study_guide", "generate_flashcard_questions", "generate_worksheet_questions", "generate_mindmap", "inference_from_prompt"]
 
 url = "http://localhost:11434/api/chat"
 model = "gemma3:27b"  
@@ -54,6 +55,20 @@ def init_session(request):
 
     print(f"Session '{CURRENT_SESSION_ID}' initialized.")
     return {"message": f"Session '{CURRENT_SESSION_ID}' initialized successfully"}, 200
+
+def restore_session(request):
+    global CURRENT_SESSION_ID
+    CURRENT_SESSION_ID = request.form.get("id")
+    if not CURRENT_SESSION_ID:
+        print("No session ID provided")
+        return {"error": "No session ID provided"}, 400
+
+    if not os.path.isdir(CURRENT_SESSION_ID):
+        print("Not an existing session.")
+        return {"error": f"Session {CURRENT_SESSION_ID} does not exist"}, 404
+
+    print(f"Session '{CURRENT_SESSION_ID}' restored.")
+    return {"message": f"Session '{CURRENT_SESSION_ID}' restored successfully"}, 200
 
 def append_image(request):
     global CURRENT_SESSION_ID
@@ -106,6 +121,115 @@ def append_pdflike(request):
     print(f"File saved at: {file_path}")
     convert_all_to_pdf(UPLOAD_FOLDER)
     return {"message": f"File saved at: {file_path}: Success"}, 200
+
+def remove_img(request):
+    global CURRENT_SESSION_ID
+    if not CURRENT_SESSION_ID:
+        print("Session not initialized.")
+        return {"error": "Session not initialized."}, 400
+
+    filename = request.form.get("filename")
+    if not filename:
+        print("No filename provided in form data.")
+        return {"error": "No filename provided."}, 400
+
+    safe_name = os.path.basename(filename)
+    imgs_dir = os.path.join(CURRENT_SESSION_ID, "imgs")
+    # Extra safety: ensure imgs_dir is normalized and file path lives inside it
+    file_path = os.path.normpath(os.path.join(imgs_dir, safe_name))
+    imgs_dir_norm = os.path.normpath(imgs_dir)
+
+    if not file_path.startswith(imgs_dir_norm + os.sep) and file_path != imgs_dir_norm:
+        # If this triggers, the filename attempted to escape the imgs dir
+        print(f"Attempted path traversal: {filename} -> {file_path}")
+        return {"error": "Invalid filename."}, 400
+
+    if not os.path.exists(file_path):
+        print(f"File not found: {file_path}")
+        return {"error": f"File not found: {safe_name}"}, 404
+
+    if not os.path.isfile(file_path):
+        print(f"Path exists but is not a file: {file_path}")
+        return {"error": "Target is not a file."}, 400
+
+    try:
+        os.remove(file_path)
+        print(f"Removed file: {file_path}")
+        return {"message": f"File '{safe_name}' removed successfully."}, 200
+    except OSError as e:
+        print(f"Failed to remove file {file_path}: {e}")
+        return {"error": f"Failed to remove file: {str(e)}"}, 500
+
+def remove_pdf(request):
+    global CURRENT_SESSION_ID
+    if not CURRENT_SESSION_ID:
+        print("Session not initialized.")
+        return {"error": "Session not initialized."}, 400
+
+    filename = request.form.get("filename")
+    if not filename:
+        print("No filename provided in form data.")
+        return {"error": "No filename provided."}, 400
+
+    # Normalize and secure the filename (prevent path traversal)
+    safe_name = os.path.basename(filename)
+    pdfs_dir = os.path.join(CURRENT_SESSION_ID, "pdfs")
+    file_path = os.path.normpath(os.path.join(pdfs_dir, safe_name))
+    pdfs_dir_norm = os.path.normpath(pdfs_dir)
+
+    if not (file_path == pdfs_dir_norm or file_path.startswith(pdfs_dir_norm + os.sep)):
+        print(f"Attempted path traversal: {filename} -> {file_path}")
+        return {"error": "Invalid filename."}, 400
+
+    if not os.path.exists(file_path):
+        print(f"File not found: {file_path}")
+        return {"error": f"File not found: {safe_name}"}, 404
+
+    if not os.path.isfile(file_path):
+        print(f"Path exists but is not a file: {file_path}")
+        return {"error": "Target is not a file."}, 400
+
+    # Determine the associated images folder name (basename without extension)
+    base_no_ext = os.path.splitext(safe_name)[0]
+    pdf_images_root = os.path.join(CURRENT_SESSION_ID, "pdf_images")
+    associated_img_folder = os.path.normpath(os.path.join(pdf_images_root, base_no_ext))
+
+    # Safety check: ensure associated_img_folder sits under pdf_images_root
+    pdf_images_root_norm = os.path.normpath(pdf_images_root)
+    if not (associated_img_folder == pdf_images_root_norm or associated_img_folder.startswith(pdf_images_root_norm + os.sep)):
+        # This should not normally happen because we used basename and a simple folder name,
+        # but we check to be extra safe.
+        print(f"Associated image folder path unsafe: {associated_img_folder}")
+        return {"error": "Invalid associated image folder path."}, 400
+
+    # Attempt removal of the PDF file and then the folder (if present)
+    try:
+        os.remove(file_path)
+        print(f"Removed PDF file: {file_path}")
+    except OSError as e:
+        print(f"Failed to remove PDF file {file_path}: {e}")
+        return {"error": f"Failed to remove PDF file: {str(e)}"}, 500
+
+    img_folder_removed = False
+    if os.path.isdir(associated_img_folder):
+        try:
+            shutil.rmtree(associated_img_folder)
+            img_folder_removed = True
+            print(f"Removed associated image folder: {associated_img_folder}")
+        except OSError as e:
+            # PDF removed, but failed to remove image folder — return partial success
+            print(f"Failed to remove associated image folder {associated_img_folder}: {e}")
+            return {
+                "message": f"PDF '{safe_name}' removed, but failed to remove associated image folder '{base_no_ext}'.",
+                "error": str(e)
+            }, 500
+
+    # Successful removal
+    msg = f"PDF '{safe_name}' removed successfully."
+    if img_folder_removed:
+        msg += f" Associated image folder '{base_no_ext}' removed."
+    return {"message": msg}, 200
+
 
 
 def set_instruct(request):
@@ -183,6 +307,7 @@ def analyse_pdf(request):
         return {"INFO": "No PDFs uploaded."}, 200
         
     pdf_paths = [os.path.abspath(os.path.join(pdf_dir_path, entry)) for entry in entries]
+    print(pdf_paths)
     messages = read_pdf(messages, pdf_paths)
     with open(f"{CURRENT_SESSION_ID}/messages.json", "w") as f:
         json.dump(messages, f, indent=2)
@@ -270,17 +395,21 @@ def generate_study_guide(request):
         messages = json.load(f)
 
     messages = generate_summary(messages)
+    markdown_text = messages[-1].get("content", "")
+    print("Generating Study Guide Markdown Successfully")
+    messages = generate_mindmap_mermaid(messages)
+    mindmap_mermaid = messages[-1].get("content", "")
+    global LAST_RESPONSE
+    LAST_RESPONSE["content"] = markdown_text
+    print("Generating Study Guide Mindmap Successfully")
 
     with open(f"{CURRENT_SESSION_ID}/messages.json", "w") as f:
         json.dump(messages, f, indent=2)
-
-    last_content = messages[-1].get("content", "")
-
-    print("Generating Study Guide Successful")
-    print("Last message:", messages[-1])
-    editorjs_json = converter.convert(last_content)
-    json_str = json.dumps(editorjs_json, indent=2, ensure_ascii=False)
-    return {"last_response": json_str}, 200
+    
+    # editorjs_json = converter.convert(markdown_text)
+    # json_str = json.dumps(editorjs_json, indent=2, ensure_ascii=False)
+    
+    return {"markdown": markdown_text, "mermaid": mindmap_mermaid}, 200
 
 
 def generate_flashcard_questions(request):
@@ -486,7 +615,62 @@ def analyze_fn(msg):
     print("Running analyze_fn with message:", msg)
     # Put your logic here
 
-function_list = [init_session, append_image, append_pdflike, set_instruct, start_LLM_session, analyse_pdf, retrieve_full_history, analyse_img, generate_study_guide, generate_flashcard_questions, generate_worksheet_questions, generate_mindmap, inference_from_prompt]
+@app.route("/session_files", methods=["GET"])
+def get_all_files():
+    base_pwd = os.getcwd()
+
+    def list_dir(d, kind):
+        if not os.path.isdir(d):
+            return []
+        out = []
+        for name in sorted(os.listdir(d)):
+            path = os.path.join(d, name)
+            if os.path.isfile(path):
+                try:
+                    out.append({
+                        "name": name,
+                        "path": path,
+                        "type": kind,
+                        "size_bytes": os.path.getsize(path),
+                        "modified_ts": os.path.getmtime(path),
+                        "modified_iso": time.strftime(
+                            "%Y-%m-%dT%H:%M:%S", time.localtime(os.path.getmtime(path))
+                        ),
+                    })
+                except OSError:
+                    continue
+        return out
+
+    sessions = {}
+    for entry in sorted(os.listdir(base_pwd)):
+        if entry.startswith(".") or entry == "__pycache__":
+            continue
+        session_path = os.path.join(base_pwd, entry)
+        if not os.path.isdir(session_path):
+            continue
+
+        # Only treat as a session if it has at least pdfs/ or imgs/
+        pdf_dir = os.path.join(session_path, "pdfs")
+        img_dir = os.path.join(session_path, "imgs")
+        if not (os.path.isdir(pdf_dir) or os.path.isdir(img_dir)):
+            continue
+
+        pdfs = list_dir(pdf_dir, "pdf")
+        imgs = list_dir(img_dir, "img")
+        all_files = sorted(pdfs + imgs, key=lambda x: (x["type"], x["name"]))
+
+        sessions[entry] = {
+            "counts": {"pdfs": len(pdfs), "imgs": len(imgs), "all": len(all_files)},
+            "pdfs": pdfs,
+            "imgs": imgs,
+            "all": all_files,
+        }
+
+    resp = {"sessions": sessions, "session_count": len(sessions)}
+    return jsonify(resp), 200
+
+
+function_list = [init_session, restore_session, append_image, append_pdflike, remove_img, remove_pdf, set_instruct, start_LLM_session, analyse_pdf, retrieve_full_history, analyse_img, generate_study_guide, generate_flashcard_questions, generate_worksheet_questions, generate_mindmap, inference_from_prompt]
 
 @app.route("/upload", methods=["POST"])
 def upload_content():
@@ -521,6 +705,7 @@ def upload_content():
         return jsonify({"error": f"Function execution failed: {e}"}), 500
     finally:
         server_status["busy"] = False
+
     
 @app.route("/health", methods=["GET"])
 def health():
@@ -529,6 +714,7 @@ def health():
     Returns HTTP 200 with a JSON indicating the server is alive.
     """
     return jsonify({"status": "healthy", "server_status": "busy" if server_status["busy"] else "idle"}), 200  
+
 
 @app.route("/status", methods=["GET"])
 def status():
