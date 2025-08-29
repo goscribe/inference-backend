@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Mermaid Graph Viewer</title>
+  <script type="module">
+    import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+    mermaid.initialize({ startOnLoad: false, theme: "default" });
+  </script>
+  <style>
+    #mermaidContainer {
+      border: 1px solid #ccc;
+      padding: 10px;
+      margin-top: 10px;
+      background-color: #f9f9f9;
+      overflow-x: auto;
+    }
+    #debugContainer {
+      border: 1px dashed #999;
+      padding: 10px;
+      margin-top: 10px;
+      white-space: pre-wrap;
+      font-family: monospace;
+    }
+    button {
+      margin-top: 5px;
+    }
+  </style>
+</head>
+<body>
+  <h2>Render Mermaid Graph from Last Response</h2>
+  <button id="showGraphBtn">Show Graph</button>
+  <div id="mermaidContainer">Graph will appear here...</div>
+
+  <h3>Debug: Pretty-Printed Source</h3>
+  <div id="debugContainer">Graph source will appear here...</div>
+
+  <script type="module">
+    import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+
+    const container = document.getElementById("mermaidContainer");
+    const debugContainer = document.getElementById("debugContainer");
+    const button = document.getElementById("showGraphBtn");
+
+    button.addEventListener("click", async () => {
+      container.innerHTML = "Loading...";
+      debugContainer.innerHTML = "Fetching source...";
+
+      try {
+        const responseText = await fetch(
+          "https://txp-tckxn64wn5vtgip72-kzoemq8qw-custom.service.onethingrobot.com/last_response"
+        ).then(res => res.text());
+
+        const data = JSON.parse(responseText);
+        let graphDef = data.last_response;
+
+        if (!graphDef) {
+          container.innerHTML = "No graph found in last_response.";
+          debugContainer.innerHTML = "No graph found in last_response.";
+          return;
+        }
+
+        // Fix escaped newlines and backslashes
+        graphDef = graphDef.replace(/\\n/g, "\n");
+        graphDef = graphDef.replace(/\\\\/g, "\\");
+
+        // Show pretty-printed graph for debugging
+        debugContainer.innerText = graphDef;
+
+        // Generate a unique ID for this graph
+        const graphId = "graph_" + Date.now();
+
+        // Render graph and insert SVG into container
+        const result = await mermaid.render(graphId, graphDef);
+        container.innerHTML = result.svg;
+
+      } catch (err) {
+        console.error(err);
+        container.innerHTML = "Error loading graph: " + err;
+        debugContainer.innerHTML = "Error: " + err;
+      }
+    });
+  </script>
+</body>
+</html>
