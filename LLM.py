@@ -88,8 +88,8 @@ def read_images(messages, image_paths):
 def generate_summary(messages):
     """Generate descriptive summary in study-guide style"""
     messages.append({"role": "user", "content": "Now, upon all the information either provided to you, or sppotted in images, Please \
-    generate a descriptive summary in the form of a study guide. In case of any math syntax, use latex - quoted in $<latex>$. Provide only what is asked - the study guide. Do not put any words of \
-    confirmation like 'sure', 'ok...', or any comments at the end. Just provide the study guide."})
+    generate a descriptive summary in the form of a study guide. In case of any math syntax, DO NOT use latex. Provide only what is asked - the study guide. DO NOT put any words of \
+    confirmation like 'sure', 'ok...', or any comments at the end. Just provide the study guide (NOT including fashcards / worksheets)."})
     
     resp = requests.post(MODEL_URL, json={"model": MODEL_NAME, "messages": messages})
     update_memory(messages, resp)
@@ -121,7 +121,7 @@ def generate_flashcards_a(messages):
 def generate_worksheet_q(messages, num_quests=5, difficulty="hard"):
     """Generate worksheet questions"""
     messages.append({"role": "user", "content": f"Now, upon all the information either provided to you, or sppotted in images, \
-    please generate {num_quests} long questions for a worksheet. They can be of any type: MCQs, FRQs, or even essays, but be organized in terms of the order so that it fits well with a worksheet. The questions shall have difficulty level '{difficulty}'. \
+    please generate {num_quests} long questions for a worksheet. They can be of any type: MCQs, FRQs, or even essays, but be organized in terms of the order so that it fits well with a worksheet. The questions shall have difficulty level '{difficulty}'. Please include at least 2 MCQs\
     FOLLOW STRICTLY THIS FORMAT: \n\
     1. <Question1> \n 2. <Question2> \n 3. <Question3> \n ... \
     Do not include the answers - they will be asked in the next message. Again, do not respond excess words."})
@@ -144,11 +144,11 @@ def generate_mindmap_mermaid(messages):
     messages.append({"role": "user", "content": """Now, please generate a mindmap of the given information using the provided syntax. 
     Actually, this is mermaid.js phrasing in case you know. 
     Given is an example: 
-    'graph LR
-        A["Square Rect"] -- "Link text" --> B(("Circle"))
-        A --> C("Round Rect")
-        B --> D{"Rhombus"}
-        C --> D'
+    'graph LR;
+        A["Square Rect"] -- "Link text" --> B(("Circle"));
+        A --> C("Round Rect");
+        B --> D{"Rhombus"};
+        C --> D';
     Each note is labeled with a capital letter (e.g., `A`). To connect two nodes, use `-->`. The text in a node is wraped in 
     `()` or `[]` or `(())` or `{}`. `()` represents a rectangle of rounded corners, so `C("Round Rect")` will simply be a node labeled by `C`,
     of shape round rectangular, and with text 'Round Rect' in the middle. Similarly, `[]` creates nodes with square rectangular shapes. 
@@ -158,9 +158,9 @@ def generate_mindmap_mermaid(messages):
     Remember, only produce the mermaid.js file. Also use connection labels where you think the association need more clarification. 
     For the use of latex if math is needed. Please use $$<latex content>$$. mermaid.js only recognize double doller signs. 
     In any case, DO NOT use `&`. This breaks mermaid graph rendering. Use the word "and" instead.
-    Do not include any additional text. Important: **Spit the plain text, so no `s quoted outside.**
-    You MUST continue after this header:
-    graph LR\n"""})
+    Do not include any additional text. Important: **generate ONLY the plain text** This means you shouldn't put something like "```mermaid" in front.
+    You MUST continue (**WITHOUT INSERTING ANYTHING IN FRONT**) after this header:
+    graph LR;\n"""})
     resp = requests.post(MODEL_URL, json={"model": MODEL_NAME, "messages": messages})
     update_memory(messages, resp)
     return messages
