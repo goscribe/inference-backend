@@ -11,6 +11,15 @@
 
   <hr>
 
+  <h2>Restore Session</h2>
+  <select id="restoreSessionDropdown">
+    <option value="">-- Select a session to restore --</option>
+  </select>
+  <button onclick="restoreSession()">Restore</button>
+  <p id="restoreStatus"></p>
+
+  <hr>
+
   <h2>Upload Image</h2>
   <input type="file" id="imageFile" accept="image/*">
   <button onclick="uploadImage()">Upload</button>
@@ -20,6 +29,24 @@
   <input type="file" id="fileInput" accept=".doc,.docx,.pdf,.xls,.xlsx"/>
   <button onclick="uploadPDFLike()">Upload</button>
   <p id="uploadStatus"></p> <!-- ✅ reuse or make unique if you want separate statuses -->
+
+  <hr>
+
+  <h2>Remove Image</h2>
+  <select id="removeImgDropdown">
+    <option value="">-- Select an image to remove --</option>
+  </select>
+  <button onclick="removeImage()">Remove</button>
+  <p id="removeStatus"></p>
+
+  <hr>
+
+  <h2>Remove PDF</h2>
+  <select id="removePdfDropdown">
+    <option value="">-- Select a PDF to remove --</option>
+  </select>
+  <button onclick="removePDF()">Remove</button>
+  <p id="removePdfStatus"></p>
 
   <hr>
 
@@ -70,12 +97,6 @@
 
   <hr>
 
-  <h2>Generate Flashcard Answers</h2>
-  <button onclick="generateFlashcardAnswers()">Generate Answers</button>
-  <pre id="flashcardAnswersStatus"></pre> <!-- ✅ changed to <pre> -->
-
-  <hr>
-
   <h2>Generate Worksheet Questions</h2>
   <label for="numWorksheetQuestions">Number of Questions:</label>
   <input type="number" id="numWorksheetQuestions" min="1" placeholder="e.g. 10">
@@ -87,14 +108,8 @@
     <option value="hard">Hard</option>
   </select>
 
-  <button onclick="generateWorksheetQuestions()">Generate Worksheet Questions</button>
-  <p id="worksheetStatus"></p>
-
-  <hr>
-
-  <h2>Generate Worksheet Answers</h2>
-  <button onclick="generateWorksheetAnswers()">Generate Answers</button>
-  <p id="worksheetAnswersStatus"></p>
+<button onclick="generateWorksheetQuestions()">Generate Worksheet Questions</button>
+<pre id="worksheetStatus"></pre>
 
   <hr>
 
@@ -110,17 +125,16 @@
 
   <hr>
 
-
-  <h3>Inference from Prompt</h3>
-  <form id="inference-form" onsubmit="runInference(event)">
-    <input type="text" id="inference-prompt" placeholder="Enter your prompt" required>
-    <button type="submit">Run Inference</button>
-  </form>
+  <h2>Inference from Prompt</h2>
+  <input type="text" id="inference-prompt" placeholder="Enter your prompt">
+  <button onclick="runInference()">Run Inference</button>
   <pre id="inference-result"></pre>
 
 
   <script>
     let currentSessionId = null;
+
+    populateRestoreSessionDropdown();
 
     async function initSession() {
       const id = document.getElementById("sessionId").value;
@@ -138,11 +152,62 @@
         if (response.ok) {
           currentSessionId = id;
           document.getElementById("status").innerText = "Session initialized successfully!";
+          // Call this after session initialization
+          if (currentSessionId) refreshRemoveImgDropdown();
+          if (currentSessionId) refreshRemovePdfDropdown();
         } else {
           document.getElementById("status").innerText = "Error: " + response.status + " " + response.statusText;
         }
       } catch (err) {
         document.getElementById("status").innerText = "Error: " + err;
+      }
+    }
+
+    async function populateRestoreSessionDropdown() {
+      try {
+        const response = await fetch("https://txp-tckxn64wn5vtgip72-kzoemq8qw-custom.service.onethingrobot.com/session_files");
+        if (!response.ok) throw new Error(response.statusText);
+        const data = await response.json();
+
+        const dropdown = document.getElementById("restoreSessionDropdown");
+        dropdown.innerHTML = '<option value="">-- Select a session to restore --</option>';
+
+        Object.keys(data.sessions || {}).forEach(sessionId => {
+          const opt = document.createElement("option");
+          opt.value = sessionId;
+          opt.text = `${sessionId} (imgs: ${data.sessions[sessionId].counts.imgs}, pdfs: ${data.sessions[sessionId].counts.pdfs})`;
+          dropdown.add(opt);
+        });
+      } catch (err) {
+        document.getElementById("restoreStatus").innerText = "Error fetching sessions: " + err;
+      }
+    }
+
+    async function restoreSession() {
+      const sessionId = document.getElementById("restoreSessionDropdown").value;
+      if (!sessionId) { alert("Please select a session"); return; }
+
+      const formData = new FormData();
+      formData.append("command", "restore_session");
+      formData.append("id", sessionId);
+
+      try {
+        const response = await fetch("https://txp-tckxn64wn5vtgip72-kzoemq8qw-custom.service.onethingrobot.com/upload", {
+          method: "POST",
+          body: formData
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          document.getElementById("restoreStatus").innerText = "Restore success: " + (result.message || JSON.stringify(result));
+          currentSessionId = sessionId;
+          if (currentSessionId) refreshRemoveImgDropdown();
+          if (currentSessionId) refreshRemovePdfDropdown();
+        } else {
+          document.getElementById("restoreStatus").innerText = "Error: " + response.status + " " + response.statusText;
+        }
+      } catch (err) {
+        document.getElementById("restoreStatus").innerText = "Error: " + err;
       }
     }
 
@@ -288,21 +353,45 @@
     }
 
     async function generateStudyGuide() {
-      if (!currentSessionId) { alert("Please init a session first."); return; }
+      if (!currentSessionId) {
+        alert("Please init a session first.");
+        return;
+      }
 
       const formData = new FormData();
       formData.append("command", "generate_study_guide");
 
       try {
-        const response = await fetch("https://txp-tckxn64wn5vtgip72-kzoemq8qw-custom.service.onethingrobot.com/upload", {
-          method: "POST", body: formData
-        });
+        const response = await fetch(
+          "https://txp-tckxn64wn5vtgip72-kzoemq8qw-custom.service.onethingrobot.com/upload",
+          {
+            method: "POST",
+            body: formData
+          }
+        );
+
+        // Always read raw text first
+        const text = await response.text();
+        console.log("Raw reply:", text);
 
         if (response.ok) {
-          const result = await response.json();
-          document.getElementById("studyGuideStatus").innerText = JSON.stringify(result, null, 2);
+          // Parse JSON
+          let result = {};
+          try {
+            result = JSON.parse(text);
+          } catch (err) {
+            console.error("Failed to parse JSON:", err);
+            document.getElementById("studyGuideStatus").innerText =
+              "Failed to parse JSON:\n" + text;
+            return;
+          }
+
+          // Display the last_response
+          document.getElementById("studyGuideStatus").innerText =
+            result.markdown || "No response content";
         } else {
-          document.getElementById("studyGuideStatus").innerText = "Error: " + response.status + " " + response.statusText;
+          document.getElementById("studyGuideStatus").innerText =
+            "Error: " + response.status + " " + response.statusText + "\nRaw: " + text;
         }
       } catch (err) {
         document.getElementById("studyGuideStatus").innerText = "Error: " + err;
@@ -385,6 +474,33 @@
       }
     }
 
+    async function generateFlashcard() {
+        if (!currentSessionId) { 
+          alert("Please init a session first."); 
+          return; 
+        }
+
+        const formData = new FormData();
+        formData.append("command", "generate_flashcard");
+
+        try {
+          const response = await fetch("https://txp-tckxn64wn5vtgip72-kzoemq8qw-custom.service.onethingrobot.com/upload", {
+            method: "POST", 
+            body: formData
+          });
+
+          if (response.ok) {
+            const result = await response.json();
+            document.getElementById("flashcardGenStatus").innerText = JSON.stringify(result, null, 2);
+          } else {
+            document.getElementById("flashcardGenStatus").innerText = 
+              "Error: " + response.status + " " + response.statusText;
+          }
+        } catch (err) {
+          document.getElementById("flashcardGenStatus").innerText = "Error: " + err;
+        }
+      }
+
     async function generateWorksheetQuestions() {
       if (!currentSessionId) { 
         alert("Please init a session first."); 
@@ -406,44 +522,19 @@
 
       try {
         const response = await fetch("https://txp-tckxn64wn5vtgip72-kzoemq8qw-custom.service.onethingrobot.com/upload", {
-          method: "POST",
+          method: "POST", 
           body: formData
         });
 
         if (response.ok) {
           const result = await response.json();
-          document.getElementById("worksheetStatus").innerText = "Worksheet questions generated: " + result.message;
+          document.getElementById("worksheetStatus").innerText = JSON.stringify(result, null, 2);
         } else {
-          document.getElementById("worksheetStatus").innerText = "Error: " + response.status + " " + response.statusText;
+          document.getElementById("worksheetStatus").innerText = 
+            "Error: " + response.status + " " + response.statusText;
         }
       } catch (err) {
         document.getElementById("worksheetStatus").innerText = "Error: " + err;
-      }
-    }
-
-    async function generateWorksheetAnswers() {
-      if (!currentSessionId) { 
-        alert("Please init a session first."); 
-        return; 
-      }
-
-      const formData = new FormData();
-      formData.append("command", "generate_worksheet_answers");
-
-      try {
-        const response = await fetch("https://txp-tckxn64wn5vtgip72-kzoemq8qw-custom.service.onethingrobot.com/upload", {
-          method: "POST",
-          body: formData
-        });
-
-        if (response.ok) {
-          const result = await response.json();
-          document.getElementById("worksheetAnswersStatus").innerText = "Worksheet answers generated: " + result.message;
-        } else {
-          document.getElementById("worksheetAnswersStatus").innerText = "Error: " + response.status + " " + response.statusText;
-        }
-      } catch (err) {
-        document.getElementById("worksheetAnswersStatus").innerText = "Error: " + err;
       }
     }
 
@@ -473,22 +564,154 @@
       }
     }
 
-    async function runInference(event) {
-      event.preventDefault(); // prevent form reload
-      if (!currentSessionId) { 
-        alert("Please init a session first."); 
-        return; 
+    async function runInference() {
+        if (!currentSessionId) { 
+            alert("Please init a session first."); 
+            return; 
+        }
+
+        const prompt = document.getElementById("inference-prompt").value;
+        if (!prompt) { 
+            alert("Please enter a prompt"); 
+            return; 
+        }
+
+        const formData = new FormData();
+        formData.append("command", "inference_from_prompt");
+        formData.append("prompt", prompt);
+
+        try {
+            const response = await fetch(
+                "https://txp-tckxn64wn5vtgip72-kzoemq8qw-custom.service.onethingrobot.com/upload",
+                { method: "POST", body: formData }
+            );
+
+            const text = await response.text();
+            console.log("Raw reply:", text);
+
+            if (response.ok) {
+                let result = {};
+                try { 
+                    result = JSON.parse(text); 
+                } catch (err) {
+                    console.error("Failed to parse JSON:", err);
+                    document.getElementById("inference-result").innerText = "Failed to parse JSON:\n" + text;
+                    return;
+                }
+
+                document.getElementById("inference-result").innerText =
+                    result.last_response || "No response content";
+            } else {
+                document.getElementById("inference-result").innerText =
+                    "Error: " + response.status + " " + response.statusText + "\nRaw: " + text;
+            }
+        } catch (err) {
+            document.getElementById("inference-result").innerText = "Error: " + err;
+        }
+    }
+
+    async function populateRemoveImgDropdown() {
+      if (!currentSessionId) return;
+
+      try {
+        const response = await fetch("https://txp-tckxn64wn5vtgip72-kzoemq8qw-custom.service.onethingrobot.com/session_files");
+        if (!response.ok) throw new Error(response.statusText);
+        const data = await response.json();
+
+        const sessionData = data.sessions?.[currentSessionId];
+        if (!sessionData) {
+          document.getElementById("removeStatus").innerText = "No files found for this session.";
+          return;
+        }
+
+        const dropdown = document.getElementById("removeImgDropdown");
+        dropdown.innerHTML = '<option value="">-- Select an image to remove --</option>';
+        sessionData.imgs.forEach(img => {
+          const opt = document.createElement("option");
+          opt.value = img.name;
+          opt.text = `${img.name} (${(img.size_bytes/1024).toFixed(1)} KB, modified ${img.modified_iso})`;
+          dropdown.add(opt);
+        });
+      } catch (err) {
+        document.getElementById("removeStatus").innerText = "Error fetching images: " + err;
+      }
+    }
+
+    // Call this whenever session is initialized or after an image is uploaded
+    function refreshRemoveImgDropdown() {
+        populateRemoveImgDropdown();
       }
 
-      const prompt = document.getElementById("inference-prompt").value;
-      if (!prompt) { 
-        alert("Please enter a prompt"); 
-        return; 
+      async function removeImage() {
+        if (!currentSessionId) { alert("Please init a session first."); return; }
+
+        const filename = document.getElementById("removeImgDropdown").value;
+        if (!filename) { alert("Please select an image"); return; }
+
+        const formData = new FormData();
+        formData.append("command", "remove_img");
+        formData.append("filename", filename);
+
+        try {
+          const response = await fetch("https://txp-tckxn64wn5vtgip72-kzoemq8qw-custom.service.onethingrobot.com/upload", {
+            method: "POST",
+            body: formData
+          });
+
+          if (response.ok) {
+            const result = await response.json();
+            document.getElementById("removeStatus").innerText = "Remove success: " + (result.message || JSON.stringify(result));
+            populateRemoveImgDropdown(); // refresh after removal
+          } else {
+            document.getElementById("removeStatus").innerText = "Error: " + response.status + " " + response.statusText;
+          }
+        } catch (err) {
+          document.getElementById("removeStatus").innerText = "Error: " + err;
+        }
       }
+
+
+    async function populateRemovePdfDropdown() {
+      if (!currentSessionId) return;
+
+      try {
+        const response = await fetch("https://txp-tckxn64wn5vtgip72-kzoemq8qw-custom.service.onethingrobot.com/session_files");
+        if (!response.ok) throw new Error(response.statusText);
+        const data = await response.json();
+
+        const sessionData = data.sessions?.[currentSessionId];
+        if (!sessionData) {
+          document.getElementById("removePdfStatus").innerText = "No files found for this session.";
+          return;
+        }
+
+        const dropdown = document.getElementById("removePdfDropdown");
+        dropdown.innerHTML = '<option value="">-- Select a PDF to remove --</option>';
+        sessionData.pdfs.forEach(pdf => {
+          const opt = document.createElement("option");
+          opt.value = pdf.name;
+          opt.text = `${pdf.name} (${(pdf.size_bytes/1024).toFixed(1)} KB, modified ${pdf.modified_iso})`;
+          dropdown.add(opt);
+        });
+      } catch (err) {
+        document.getElementById("removePdfStatus").innerText = "Error fetching PDFs: " + err;
+      }
+    }
+
+    // Call this whenever session is initialized or after a PDF is uploaded
+    function refreshRemovePdfDropdown() {
+      populateRemovePdfDropdown();
+    }
+
+    async function removePDF() {
+      if (!currentSessionId) { alert("Please init a session first."); return; }
+
+      const filename = document.getElementById("removePdfDropdown").value;
+      if (!filename) { alert("Please select a PDF"); return; }
 
       const formData = new FormData();
-      formData.append("command", "inference_from_prompt");
-      formData.append("prompt", prompt);
+      formData.append("command", "remove_pdf");
+      formData.append("filename", filename);
 
       try {
         const response = await fetch("https://txp-tckxn64wn5vtgip72-kzoemq8qw-custom.service.onethingrobot.com/upload", {
@@ -498,14 +721,16 @@
 
         if (response.ok) {
           const result = await response.json();
-          document.getElementById("inference-result").innerText = JSON.stringify(result, null, 2);
+          document.getElementById("removePdfStatus").innerText = "Remove success: " + (result.message || JSON.stringify(result));
+          populateRemovePdfDropdown(); // refresh after removal
         } else {
-          document.getElementById("inference-result").innerText = "Error: " + response.status + " " + response.statusText;
+          document.getElementById("removePdfStatus").innerText = "Error: " + response.status + " " + response.statusText;
         }
       } catch (err) {
-        document.getElementById("inference-result").innerText = "Error: " + err;
+        document.getElementById("removePdfStatus").innerText = "Error: " + err;
       }
     }
+
   </script>
 </body>
 </html>
