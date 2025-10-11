@@ -15,15 +15,85 @@ Each request uses `FormData` with a `command` key and optional additional fields
 ## 1. Initialize Session
 
 **Command:** `init_session`  
+This command initializes a new study session under a specific user. It verifies both the **session ID** and **username**, creates the required folder structure under the user’s directory, and sets up a default conversation history for the LLM.
+
+---
+
 **FormData:**  
 ```js
 formData.append("command", "init_session");
 formData.append("id", "<SESSION_ID>");
+formData.append("user", "<USERNAME>");
 ```
 
-**Status:**  
-- Success: `{"message": "Session '<SESSION_ID>' initialized successfully"}`  
-- Failure: `{"error": "No session ID provided"}`  
+---
+
+**Server Behavior:**
+1. Verifies both `id` (session ID) and `user` (username) are provided.  
+2. Creates the following directory structure:
+   ```
+   <USERNAME>/
+   └── <SESSION_ID>/
+       ├── pdfs/
+       └── imgs/
+   ```
+3. Initializes a **default message history (`messages.json`)** in the session folder with a system instruction and a first user prompt:
+   ```json
+   [
+     {
+       "role": "system",
+       "content": "Your task is to serve as a study tool - given the info that will be provided next, in form of either text or image, you will try your best to understand them. You will be asked to generate a summary in case we have to check your understanding. You will generate a study guide covering the given information. The guide shall contain 1) a descriptive summary of all given materials in the form of a lecture note, 2) a set of flashcard questions, short in form, along with corresponding answers, 3) an organized worksheet served as an exercise, supplied along with an answer sheet. Your responses will be listened by a front end, so answer only what is being asked, and follow the form. Good Luck!"
+     },
+     {
+       "role": "user",
+       "content": "You will be writing a note and prepare some questions on following materials. Materials will be given"
+     },
+     {
+       "role": "assistant",
+       "content": "<Assistant’s initial response from Ollama>"
+     }
+   ]
+   ```
+4. Sends the initial messages to the LLM model via `ollama.chat()` and appends the assistant’s first response.
+5. Saves this conversation in `messages.json` under the session directory.
+
+---
+
+**Status:**
+- ✅ **Success:**  
+  ```json
+  { "message": "Session '<SESSION_ID>' initialized successfully for user '<USERNAME>'" }
+  ```
+- ❌ **Failure:**  
+  - Missing session ID:  
+    ```json
+    { "error": "No session ID provided" }
+    ```
+  - Missing username:  
+    ```json
+    { "error": "No permission." }
+    ```
+
+---
+
+**Example Usage:**
+```js
+const formData = new FormData();
+formData.append("command", "init_session");
+formData.append("id", "session001");
+formData.append("user", "jayfeng");
+
+fetch(SERVER_URL, { method: "POST", body: formData })
+  .then(res => res.json())
+  .then(console.log);
+```
+
+---
+
+**Notes:**
+- Both `id` and `user` are **required** — the session won’t initialize otherwise.  
+- The structure now organizes all sessions under user folders, enabling multiple users and multiple sessions per user.  
+- Always call `init_session` **before** any upload, analysis, or generation commands.
 
 ---
 
