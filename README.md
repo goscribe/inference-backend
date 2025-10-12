@@ -103,6 +103,8 @@ fetch(SERVER_URL, { method: "POST", body: formData })
 **Command:** `append_image`  
 **FormData:**  
 ```js
+formData.append("user", <USER_ID>);
+formData.append("session", <SESSION_ID>);
 formData.append("command", "append_image");
 formData.append("file", <File Object>);
 ```
@@ -118,6 +120,8 @@ formData.append("file", <File Object>);
 **Command:** `append_pdflike`  
 **FormData:**  
 ```js
+formData.append("user", <USER_ID>);
+formData.append("session", <SESSION_ID>);
 formData.append("command", "append_pdflike");
 formData.append("file", <File Object>);
 ```
@@ -131,6 +135,8 @@ formData.append("file", <File Object>);
 **Command:** `remove_img`  
 **FormData:**  
 ```js
+formData.append("user", <USER_ID>);
+formData.append("session", <SESSION_ID>);
 formData.append("command", "remove_img");
 formData.append("filename", "<IMAGE_FILENAME>");
 ````
@@ -153,6 +159,8 @@ formData.append("filename", "<IMAGE_FILENAME>");
 **FormData:**
 
 ```js
+formData.append("user", <USER_ID>);
+formData.append("session", <SESSION_ID>);
 formData.append("command", "remove_pdf");
 formData.append("filename", "<PDF_FILENAME>");
 ```
@@ -179,6 +187,8 @@ formData.append("filename", "<PDF_FILENAME>");
 **Command:** `set_instruct`  
 **FormData:**  
 ```js
+formData.append("user", <USER_ID>);
+formData.append("session", <SESSION_ID>);
 formData.append("command", "set_instruct");
 formData.append("instruction_text", "<INSTRUCTION_TEXT>");
 ```
@@ -189,25 +199,13 @@ formData.append("instruction_text", "<INSTRUCTION_TEXT>");
 
 ---
 
-## 7. Start LLM Session
-
-**Command:** `start_LLM_session`  
-**FormData:**  
-```js
-formData.append("command", "start_LLM_session");
-```
-
-**Status:**  
-- Success: `{"message": "Start LLM Session Successful"}`  
-- Failure: `{"error": "...error details..."}`  
-
----
-
-## 8. Analyse PDF
+## 7. Analyse PDF
 
 **Command:** `analyse_pdf`  
 **FormData:**  
 ```js
+formData.append("user", <USER_ID>);
+formData.append("session", <SESSION_ID>);
 formData.append("command", "analyse_pdf");
 ```
 
@@ -217,11 +215,13 @@ formData.append("command", "analyse_pdf");
 
 ---
 
-## 9. Analyse Image
+## 8. Analyse Image
 
 **Command:** `analyse_img`  
 **FormData:**  
 ```js
+formData.append("user", <USER_ID>);
+formData.append("session", <SESSION_ID>);
 formData.append("command", "analyse_img");
 ```
 
@@ -231,11 +231,13 @@ formData.append("command", "analyse_img");
 
 ---
 
-## 10. Generate Study Guide
+## 9. Generate Study Guide
 
 **Command:** `generate_study_guide`  
 **FormData:**  
 ```js
+formData.append("user", <USER_ID>);
+formData.append("session", <SESSION_ID>);
 formData.append("command", "generate_study_guide");
 ```
 
@@ -245,11 +247,13 @@ formData.append("command", "generate_study_guide");
 
 ---
 
-## 11. Generate Flashcard Questions
+## 10. Generate Flashcard Questions
 
 **Command:** `generate_flashcard_questions`  
 **FormData:**  
 ```js
+formData.append("user", <USER_ID>);
+formData.append("session", <SESSION_ID>);
 formData.append("command", "generate_flashcard_questions");
 formData.append("num_questions", "<NUMBER>");
 formData.append("difficulty", "<easy|medium|hard>");
@@ -261,11 +265,13 @@ formData.append("difficulty", "<easy|medium|hard>");
 
 ---
 
-## 12. Generate Worksheet Questions
+## 11. Generate Worksheet Questions
 
 **Command:** `generate_worksheet_questions`  
 **FormData:**  
 ```js
+formData.append("user", <USER_ID>);
+formData.append("session", <SESSION_ID>);
 formData.append("command", "generate_worksheet_questions");
 formData.append("num_questions", "<NUMBER>");
 formData.append("difficulty", "<easy|medium|hard>");
@@ -277,11 +283,13 @@ formData.append("difficulty", "<easy|medium|hard>");
 
 ---
 
-## 13. Generate Mindmap
+## 12. Generate Mindmap
 
 **Command:** `generate_mindmap`  
 **FormData:**  
 ```js
+formData.append("user", <USER_ID>);
+formData.append("session", <SESSION_ID>);
 formData.append("command", "generate_mindmap");
 ```
 
@@ -296,6 +304,7 @@ formData.append("command", "generate_mindmap");
 **Command:** `retrieve_full_history`  
 **FormData:**  
 ```js
+
 formData.append("command", "retrieve_full_history");
 ```
 
@@ -313,6 +322,8 @@ formData.append("command", "retrieve_full_history");
 **Command:** `inference_from_prompt`  
 **FormData:**  
 ```js
+formData.append("user", <USER_ID>);
+formData.append("session", <SESSION_ID>);
 formData.append("command", "inference_from_prompt");
 formData.append("prompt", "<PROMPT_TEXT>");
 ```
@@ -376,7 +387,7 @@ workspaceId,
 
 ### Notes
 
-- Make sure to **initialize a session first** (`init_session`) before sending any other commands.  
+- Make sure to **initialize a session first** (`init_session`) before sending any other commands to that session.  
 - All file uploads require a `File` object from a `<input type="file">` element.  
 - All output JSON responses are displayed in `<pre>` blocks for readability in the frontend.  
 - Errors will be returned as HTTP errors or caught exceptions.
@@ -399,53 +410,135 @@ at least a `pdfs/` or `imgs/` subfolder.
 
 ```json
 {
-  "sessions": {
-    "session123": {
-      "counts": {
-        "pdfs": 2,
-        "imgs": 1,
-        "all": 3
-      },
-      "pdfs": [
-        {
-          "name": "doc1.pdf",
-          "path": "session123/pdfs/doc1.pdf",
-          "type": "pdf",
-          "size_bytes": 15324,
-          "modified_ts": 1724819200.0,
-          "modified_iso": "2025-08-28T08:46:40"
+  "user_count": 5,
+  "users": {
+    "FantasticJellyFish": {
+      "61016": {
+        "counts": {
+          "all": 1,
+          "imgs": 0,
+          "pdfs": 1
         },
-        {
-          "name": "doc2.pdf",
-          "path": "session123/pdfs/doc2.pdf",
-          "type": "pdf",
-          "size_bytes": 90213,
-          "modified_ts": 1724819300.0,
-          "modified_iso": "2025-08-28T08:48:20"
-        }
-      ],
-      "imgs": [
-        {
-          "name": "image1.png",
-          "path": "session123/imgs/image1.png",
-          "type": "img",
-          "size_bytes": 30241,
-          "modified_ts": 1724819400.0,
-          "modified_iso": "2025-08-28T08:50:00"
-        }
-      ],
-      "all": [
-        { "... pdf or img entries ..." }
-      ]
+        "imgs": [],
+        "pdfs": [
+          {
+            "modified_iso": "2025-10-11T21:20:50",
+            "modified_ts": 1760217650,
+            "name": "AP Lab 04 - Diffusion and Osmosis 2016.pdf",
+            "path": "Data/FantasticJellyFish/61016/pdfs/AP Lab 04 - Diffusion and Osmosis 2016.pdf",
+            "size_bytes": 320573,
+            "type": "pdf"
+          }
+        ],
+        "user": "FantasticJellyFish"
+      }
     },
-    "session456": {
-      "counts": { "pdfs": 0, "imgs": 4, "all": 4 },
-      "pdfs": [],
-      "imgs": [ { "... entries ..." } ],
-      "all": [ { "... entries ..." } ]
+    "HappyCat": {
+      "1": {
+        "counts": {
+          "all": 1,
+          "imgs": 1,
+          "pdfs": 0
+        },
+        "imgs": [
+          {
+            "modified_iso": "2025-10-11T20:21:58",
+            "modified_ts": 1760214118,
+            "name": "figure-05-02-04.jpeg",
+            "path": "Data/HappyCat/1/imgs/figure-05-02-04.jpeg",
+            "size_bytes": 162699,
+            "type": "img"
+          }
+        ],
+        "pdfs": [],
+        "user": "HappyCat"
+      },
+      "100": {
+        "counts": {
+          "all": 1,
+          "imgs": 1,
+          "pdfs": 0
+        },
+        "imgs": [
+          {
+            "modified_iso": "2025-10-11T19:26:42",
+            "modified_ts": 1760210802,
+            "name": "figure-05-02-04.jpeg",
+            "path": "Data/HappyCat/100/imgs/figure-05-02-04.jpeg",
+            "size_bytes": 162699,
+            "type": "img"
+          }
+        ],
+        "pdfs": [],
+        "user": "HappyCat"
+      },
+      "200": {
+        "counts": {
+          "all": 1,
+          "imgs": 1,
+          "pdfs": 0
+        },
+        "imgs": [
+          {
+            "modified_iso": "2025-10-11T19:55:12",
+            "modified_ts": 1760212512,
+            "name": "figure-05-02-04.jpeg",
+            "path": "Data/HappyCat/200/imgs/figure-05-02-04.jpeg",
+            "size_bytes": 162699,
+            "type": "img"
+          }
+        ],
+        "pdfs": [],
+        "user": "HappyCat"
+      }
+    },
+    "SadDog": {
+      "100": {
+        "counts": {
+          "all": 0,
+          "imgs": 0,
+          "pdfs": 0
+        },
+        "imgs": [],
+        "pdfs": [],
+        "user": "SadDog"
+      },
+      "610": {
+        "counts": {
+          "all": 0,
+          "imgs": 0,
+          "pdfs": 0
+        },
+        "imgs": [],
+        "pdfs": [],
+        "user": "SadDog"
+      }
+    },
+    "SadPig": {
+      "101": {
+        "counts": {
+          "all": 0,
+          "imgs": 0,
+          "pdfs": 0
+        },
+        "imgs": [],
+        "pdfs": [],
+        "user": "SadPig"
+      }
+    },
+    "cmesjxa2i0000ry9oyjmoasjk": {
+      "cmesjxwhz0002ry9ozjg0gpvn": {
+        "counts": {
+          "all": 0,
+          "imgs": 0,
+          "pdfs": 0
+        },
+        "imgs": [],
+        "pdfs": [],
+        "user": "cmesjxa2i0000ry9oyjmoasjk"
+      }
     }
-  },
-  "session_count": 2
+  }
 }
 ````
 
@@ -465,15 +558,3 @@ at least a `pdfs/` or `imgs/` subfolder.
   * `modified_ts`: last modified timestamp (epoch).
   * `modified_iso`: last modified time (ISO format).
 
-
-
-
-## Some Notes on Implementation
-### Why choose server-run LLM?
-Most APIs (e.g. ChatGPT) does not support multiple pdf upload and analysis. We use the Gemma multimodal model, which 
-accepts vision and text input. With that, we can flexiblly feed the model with any file that can be depomposed into 
-text, and image components. PDF fits such decomposition, thus also any files that can be safely converted into PDFs.   
-
-**The other advantage** is that server-run LLM can easily be fine-tuned. Currently, we don't have the data for fine-tuning 
-but user-sharing is implemented, such that in the future, when enough users share their self-made of adjusted study guides, 
-flashcards, and worksheets, these data can be collected and used to fine-tune the model.
