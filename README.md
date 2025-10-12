@@ -22,7 +22,7 @@ This command initializes a new study session under a specific user. It verifies 
 **FormData:**  
 ```js
 formData.append("command", "init_session");
-formData.append("id", "<SESSION_ID>");
+formData.append("session", "<SESSION_ID>");
 formData.append("user", "<USERNAME>");
 ```
 
@@ -32,10 +32,11 @@ formData.append("user", "<USERNAME>");
 1. Verifies both `id` (session ID) and `user` (username) are provided.  
 2. Creates the following directory structure:
    ```
-   <USERNAME>/
-   └── <SESSION_ID>/
-       ├── pdfs/
-       └── imgs/
+   ROOT_DIR
+   └── <USERNAME>/
+       └── <SESSION_ID>/
+           ├── pdfs/
+           └── imgs/
    ```
 3. Initializes a **default message history (`messages.json`)** in the session folder with a system instruction and a first user prompt:
    ```json
