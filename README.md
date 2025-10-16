@@ -5,8 +5,9 @@ These requests allows you to initialize a session, upload images and PDF-like fi
 All communication is done via `POST` requests to the server endpoint:
 
 ```
-https://txp-tckxn64wn5vtgip72-kzoemq8qw-custom.service.onethingrobot.com/upload
+https://6q4-meon3oytck2ykijcg-comzfeezo-custom.service.onethingrobot.com/upload
 ```
+
 
 Each request uses `FormData` with a `command` key and optional additional fields.
 
