@@ -261,7 +261,7 @@ formData.append("difficulty", "<easy|medium|hard>");
 ```
 
 **Status:**  
-- Success: `{"last_response": "<JSON flashcards>"}`
+- Success: `{"flashcards": "<JSON flashcards>"}`
 - Failure: `{"error": "...error details..."}`  
 
 ---
@@ -279,7 +279,7 @@ formData.append("difficulty", "<easy|medium|hard>");
 ```
 
 **Status:**  
-- Success: `{"last_response": "<JSON worksheet>"}`
+- Success: `{"worksheet": "<JSON worksheet>"}`
 - Failure: `{"error": "...error details..."}`  
 
 ---
@@ -345,44 +345,53 @@ formData.append("prompt", "<PROMPT_TEXT>");
 ## Worksheet JSON Format:
 ```
 workspaceId,
-      title: `New Worksheet ${worksheets.length + 1}`,
-      description: 'Generated practice problems',
-      difficulty: 'MEDIUM',
-      estimatedTime: '30 min',
-      problems: [
-        {
-          question: 'Sample question 1',
-          answer: 'Sample answer 1',
-          type: 'TEXT',
-        },
-        {
-          question: 'Sample question 2',
-          answer: 'Sample answer 2',
-          type: 'TEXT',
-        },
-        {
-          question: 'Sample question 3',
-          answer: 'Sample answer 3',
-          type: 'MULTIPLE_CHOICE',
-          options: ['Option 1', 'Option 2', 'Option 3', 'Option 4'],
-        },
-        {
-          question: 'Sample question 4',
-          answer: 'Sample answer 4',
-          type: 'NUMERIC',
-        },
-        {
-          question: 'Sample question 5',
-          answer: 'Sample answer 5',
-          type: 'TRUE_FALSE',
-        },
-        {
-          question: 'Sample question 6',
-          answer: 'Sample answer 6',
-          type: 'MATCHING',
-          options: ['Option 1', 'Option 2', 'Option 3'],
-        }
-      ],
+title: 'Some title'`,
+description: 'Some description for generated practice problems',
+difficulty: 'EASY/MEDIUM/HARD',
+estimatedTime: '30 min',
+'problems": [
+        {{
+            "question": "<Question 1>",
+            "answer": "<Answer 1>",
+            "type": "TEXT",
+            "options": [Keep this empty],
+            "mark_scheme": "A string that tells an instructor how to mark: what is acceptable, and what is not enough or incorrect."
+        }},
+        {{
+            "question": "<Question 2>",
+            "answer": "<Answer 2>",
+            "type": "TEXT",
+            "options": [Keep this empty],
+            "mark_scheme": "A string that tells an instructor how to mark: what is acceptable, and what is not enough or incorrect."
+        }},
+        {{
+            "question": "<Question 3>",
+            "answer": "<Answer 3>",
+            "type": "MULTIPLE_CHOICE",
+            "options": ["<Option 1>", "<Option 2>", "<Option 3>"],
+            "mark_scheme": "For MCQs, have here an answer explanation instead of a mark scheme."
+        }},
+        {{
+            "question": "<Question 4>",
+            "answer": "<Answer 4>",
+            "type": "NUMERIC",
+            "options": [Keep this empty],
+            "mark_scheme": "For numerical value entries, have here an answer explanation instead of a mark scheme."
+        }},
+        {{
+            "question": "<Question 5>",
+            "answer": "<Answer 5>",
+            "type": "TRUE_FALSE",
+            "options": [Keep this empty],
+            "mark_scheme": "For true or false questions, have here an answer explanation instead of a mark scheme."
+        }},
+        {{
+            "question": "<Question 6>",
+            "answer": "<Answer 6>",
+            "type": "MATCHING",
+            "options": ["Option 1", "Option 2", "Option 3"]
+            "mark_scheme": "For matching questions, have here an answer explanation instead of a mark scheme."
+        }}]
 ```
 
 
