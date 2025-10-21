@@ -284,7 +284,26 @@ formData.append("difficulty", "<easy|medium|hard>");
 
 ---
 
-## 12. Generate Mindmap
+## 12. Mark Worksheet Questions
+
+**Command:** `generate_worksheet_questions`  
+**FormData:**  
+```js
+formData.append("user", <USER_ID>);
+formData.append("session", <SESSION_ID>);
+formData.append("command", "mark_worksheet_questions");
+formData.append("question", "<THE QUESTION FOR MARKING>");
+formData.append("answer", "<USER ANSWER>");
+formData.append("mark_scheme", "<MARK SCHEME>");   // This is optional, but `generate_worksheet_questions` will provide mark_scheme.
+```
+
+**Status:**  
+- Success: `{"marking": "<JSON marking>"}`
+- Failure: `{"error": "...error details..."}`  
+
+---
+
+## 13. Generate Mindmap
 
 **Command:** `generate_mindmap`  
 **FormData:**  
@@ -392,6 +411,14 @@ estimatedTime: '30 min',
             "options": ["Option 1", "Option 2", "Option 3"]
             "mark_scheme": "For matching questions, have here an answer explanation instead of a mark scheme."
         }}]
+```
+
+## Marking JSON Format:
+```
+{
+correctness: (Int) 1 for entirely correct, 0 for incorrect, 2 for partially correct,
+feedback: "AI feedbacks"
+}
 ```
 
 
