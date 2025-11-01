@@ -398,6 +398,7 @@ estimatedTime: '30 min',
             "type": "TEXT",
             "options": [Keep this empty],
             "mark_scheme": "A string that tells an instructor how to mark: what is acceptable, and what is not enough or incorrect."
+            "points": <integer value representing total points for this question>
         }},
         {{
             "question": "<Question 2>",
@@ -405,6 +406,7 @@ estimatedTime: '30 min',
             "type": "TEXT",
             "options": [Keep this empty],
             "mark_scheme": "A string that tells an instructor how to mark: what is acceptable, and what is not enough or incorrect."
+            "points": <integer value representing total points for this question>
         }},
         {{
             "question": "<Question 3>",
@@ -412,6 +414,7 @@ estimatedTime: '30 min',
             "type": "MULTIPLE_CHOICE",
             "options": ["<Option 1>", "<Option 2>", "<Option 3>"],
             "mark_scheme": "For MCQs, have here an answer explanation instead of a mark scheme."
+            "points": <integer value representing total points for this question>
         }},
         {{
             "question": "<Question 4>",
@@ -419,6 +422,7 @@ estimatedTime: '30 min',
             "type": "NUMERIC",
             "options": [Keep this empty],
             "mark_scheme": "For numerical value entries, have here an answer explanation instead of a mark scheme."
+            "points": <integer value representing total points for this question>
         }},
         {{
             "question": "<Question 5>",
@@ -426,6 +430,7 @@ estimatedTime: '30 min',
             "type": "TRUE_FALSE",
             "options": [Keep this empty],
             "mark_scheme": "For true or false questions, have here an answer explanation instead of a mark scheme."
+            "points": <integer value representing total points for this question>
         }},
         {{
             "question": "<Question 6>",
@@ -433,6 +438,7 @@ estimatedTime: '30 min',
             "type": "MATCHING",
             "options": ["Option 1", "Option 2", "Option 3"]
             "mark_scheme": "For matching questions, have here an answer explanation instead of a mark scheme."
+            "points": <integer value representing total points for this question>
         }}]
 ```
 
@@ -441,6 +447,7 @@ estimatedTime: '30 min',
 {
 correctness: (Int) 1 for entirely correct, 0 for incorrect, 2 for partially correct,
 feedback: "AI feedbacks"
+achievedPoints: <numerical score achieved based on the mark_scheme and the total point value>
 }
 ```
 
