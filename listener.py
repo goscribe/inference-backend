@@ -1,9 +1,11 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, g
 from flask_cors import CORS
 import os
 import json
+import time
+from datetime import datetime
 # from fileConverter import *
-from LLM_openAI_api import read_pdf, update_memory, read_pdf_images, read_images, generate_summary, generate_flashcards_q, generate_flashcards_a, generate_worksheet_q, generate_worksheet_a, generate_mindmap_mermaid, prompt_input, generate_podcast_script
+from LLM import read_pdf, update_memory, read_pdf_images, read_images, generate_summary, generate_flashcards_q, generate_flashcards_a, generate_worksheet_q, generate_worksheet_a, generate_mindmap_mermaid, prompt_input, generate_podcast_script
 import requests
 from markdownConvertor import *
 converter = MarkdownToEditorJS()
@@ -19,6 +21,58 @@ CORS(app)  # allow all origins for frontend JS
 # Global state
 server_status = {"busy": False}
 
+# ==================== LOGGING MIDDLEWARE ====================
+@app.before_request
+def log_request():
+    """Log incoming request details"""
+    g.start_time = time.time()
+    timestamp = datetime.now().strftime("%H:%M:%S")
+    
+    # Get command if it exists
+    command = request.form.get('command', 'N/A')
+    print(f"\n[{timestamp}] → {request.method} {request.path} | command: {command}")
+    
+    # Log form data (exclude common fields, show important ones)
+    if request.form:
+        excluded_keys = {'user', 'session', 'command'}
+        form_items = {k: v for k, v in request.form.items() if k not in excluded_keys}
+        if form_items:
+            for key, value in form_items.items():
+                # Truncate long values
+                if len(str(value)) > 100:
+                    print(f"  {key}: {str(value)[:100]}...")
+                else:
+                    print(f"  {key}: {value}")
+    
+    # Log JSON data
+    if request.is_json:
+        try:
+            json_data = request.get_json()
+            json_str = json.dumps(json_data, indent=2)
+            if len(json_str) > 300:
+                print(f"  JSON: {json_str[:300]}...")
+            else:
+                print(f"  JSON: {json_str}")
+        except:
+            pass
+    
+    # Log files
+    if request.files:
+        for key, file in request.files.items():
+            print(f"  file: {file.filename}")
+
+@app.after_request
+def log_response(response):
+    """Log outgoing response details"""
+    elapsed_time = time.time() - g.start_time if hasattr(g, 'start_time') else 0
+    timestamp = datetime.now().strftime("%H:%M:%S")
+    
+    status_emoji = "✓" if response.status_code < 400 else "✗"
+    print(f"[{timestamp}] ← {status_emoji} {response.status_code} | {elapsed_time:.2f}s\n")
+    
+    return response
+# ==================== END LOGGING MIDDLEWARE ====================
+
 # Define commands and corresponding functions
 command_list = ["init_session", "append_image", "append_pdflike", "remove_img", "remove_pdf", "analyse_pdf", "analyse_img", "generate_study_guide", "generate_flashcard_questions", "generate_worksheet_questions", "mark_worksheet_questions", "inference_from_prompt", "generate_podcast"]
 
@@ -33,6 +87,12 @@ supabase = create_client(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
 
 
 
+# const formData = new FormData();
+    # formData.append('command', 'init_session');
+    # formData.append('session', sessionId);
+    # formData.append('user', user);
+
+    # // Retry logic for AI service
 def init_session(request):
 
     # Get parameters
@@ -319,16 +379,19 @@ def generate_flashcard_questions(request):
         print("Difficulty not Specified.")
         return {"error": "Difficulty not Specified."}, 400
 
+    print(f"{ROOT_DIR}/{user}/{session}/messages.json")
     # --- Load message history ---
     with open(f"{ROOT_DIR}/{user}/{session}/messages.json", "r", encoding="utf-8") as f:
         messages = json.load(f)
+
+    print("messages", messages)
 
     # --- Generate flashcard Q/A using pre-existing helper functions ---
     messages = generate_flashcards_q(messages, num_questions, difficulty)
     print("Generating Flashcard Questions Successful.")
     messages = generate_flashcards_a(messages)
     print("Generating Flashcard Answers Successful.")
-
+    print(messages)
     # --- Append JSON conversion instruction ---
     messages.append({
         "role": "user",
@@ -378,7 +441,7 @@ Be aware of any punctuations that might conflict with JSON syntax. This is extre
     # --- Extract model output ---
     model_output = response.choices[0].message.content
     messages.append({"role": "assistant", "content": model_output})
-
+    print("output", model_output)
     # --- Save updated conversation ---
     with open(f"{ROOT_DIR}/{user}/{session}/messages.json", "w", encoding="utf-8") as f:
         json.dump(messages, f, indent=2, ensure_ascii=False)
@@ -445,48 +508,90 @@ def generate_worksheet_questions(request):
             "answer": "<Answer 1>",
             "type": "TEXT",
             "options": [Keep this empty],
-            "mark_scheme": "A string that tells an instructor how to mark: what is acceptable, and what is not enough or incorrect. Include also what is required to achieve a certain amount of points",
-            "points": <integer value representing total points for this question>
+            "mark_scheme": {{
+                "points": [
+                    {{
+                        "point": 1,
+                        "requirements": "Description of what's needed for this point"
+                    }}
+                ],
+                "totalPoints": <integer value representing total points for this question>
+            }}
         }},
         {{
             "question": "<Question 2>",
             "answer": "<Answer 2>",
             "type": "TEXT",
             "options": [Keep this empty],
-            "mark_scheme": "A string that tells an instructor how to mark: what is acceptable, and what is not enough or incorrect. Include also what is required to achieve a certain amount of points",
-            "points": <integer value representing total points for this question>
+            "mark_scheme": {{
+                "points": [
+                    {{
+                        "point": 1,
+                        "requirements": "Description of what's needed for this point"
+                    }}
+                ],
+                "totalPoints": <integer value representing total points for this question>
+            }}
         }},
         {{
             "question": "<Question 3>",
             "answer": "<Answer 3>",
             "type": "MULTIPLE_CHOICE",
             "options": ["<Option 1>", "<Option 2>", "<Option 3>"],
-            "mark_scheme": "an answer explanation",
-            "points": <integer value representing total points for this question>
+            "mark_scheme": {{
+                "points": [
+                    {{
+                        "point": 1,
+                        "requirements": "Description of what's needed for this point"
+                    }}
+                ],
+                "totalPoints": <integer value representing total points for this question>
+            }}
         }},
         {{
             "question": "<Question 4>",
             "answer": "<Answer 4>",
             "type": "NUMERIC",
             "options": [Keep this empty],
-            "mark_scheme": "an answer explanation",
-            "points": <integer value representing total points for this question>
+            "mark_scheme": {{
+                "points": [
+                    {{
+                        "point": 1,
+                        "requirements": "Description of what's needed for this point"
+                    }}
+                ],
+                "totalPoints": <integer value representing total points for this question>
+            }}
         }},
         {{
             "question": "<Question 5>",
             "answer": "<Answer 5>",
             "type": "TRUE_FALSE",
             "options": [Keep this empty],
-            "mark_scheme": "an answer explanation",
-            "points": <integer value representing total points for this question>
+            "mark_scheme": {{
+                "points": [
+                    {{
+                        "point": 1,
+                        "requirements": "Description of what's needed for this point"
+                    }}
+                ],
+                "totalPoints": <integer value representing total points for this question>
+            }}
         }},
         {{
             "question": "<Question 6>",
             "answer": "<Answer 6>",
             "type": "MATCHING",
             "options": ["Option 1", "Option 2", "Option 3"],
-            "mark_scheme": "an answer explanation",
-            "points": <integer value representing total points for this question>
+            "mark_scheme": {{
+                "points": [
+                    {{
+                        "point": 1,
+                        "requirements": "Description of what's needed for this point"
+                    }}
+                ],
+                "totalPoints": <integer value representing total points for this question>
+            }}
         }}
     ]
 }}
@@ -524,16 +629,33 @@ Now, you may begin. You must produce exactly {num_questions} problems in total."
                                                                 "type": "array",
                                                                 "items": {"type": "string"}
                                                             },
-                                                            "mark_scheme": {"type": "string"},
-                                                            "points": {"type": "integer"}
+                                                            "mark_scheme": {
+                                                                "type": "object",
+                                                                "properties": {
+                                                                    "points": {
+                                                                        "type": "array",
+                                                                        "items": {
+                                                                            "type": "object",
+                                                                            "properties": {
+                                                                                "point": {"type": "integer"},
+                                                                                "requirements": {"type": "string"}
+                                                                            },
+                                                                            "required": ["point", "requirements"],
+                                                                            "additionalProperties": False
+                                                                        }
+                                                                    },
+                                                                    "totalPoints": {"type": "integer"}
+                                                                },
+                                                                "required": ["points", "totalPoints"],
+                                                                "additionalProperties": False
+                                                            }
                                                         },
                                                         "required": [
                                                             "question",
                                                             "answer",
                                                             "type",
                                                             "options",
-                                                            "mark_scheme",
-                                                            "points"
+                                                            "mark_scheme"
                                                         ],
                                                         "additionalProperties": False
                                                     }
@@ -573,6 +695,7 @@ Now, you may begin. You must produce exactly {num_questions} problems in total."
 
 
 def mark_worksheet_question(request):
+    print("Marking Worksheet Question")
     user = request.form.get("user")
     session = request.form.get("session")
     if not user or not session:
@@ -581,21 +704,34 @@ def mark_worksheet_question(request):
     question = request.form.get("question")
     answer = request.form.get("answer")
     mark_scheme = request.form.get("mark_scheme")
-    points = request.form.get("points")
 
     if not question:
         print("Questions not Specified.")
         return {"error": "Questions not Specified."}, 400
     if not mark_scheme:
-        mark_scheme = ""
+        mark_scheme = {"points": [], "totalPoints": 0}
+    else:
+        # Parse mark_scheme if it's a JSON string
+        try:
+            mark_scheme = json.loads(mark_scheme) if isinstance(mark_scheme, str) else mark_scheme
+        except:
+            mark_scheme = {"points": [], "totalPoints": 0}
+    
     if not answer:
         print("Answer not Specified.")
         return {"error": "Answer not Specified."}, 400
-    if not points:
-        print("Points not Specified. Defaulting to 1.")
-        points = 1
-
-    points = float(points)
+    
+    # Calculate total points from mark scheme
+    total_points = mark_scheme.get('totalPoints', 0)
+    if total_points == 0 and mark_scheme.get('points'):
+        # Calculate from sum of individual points if totalPoints not set
+        total_points = sum(point_item.get('point', 0) for point_item in mark_scheme.get('points', []))
+    
+    # Format mark_scheme for the prompt
+    mark_scheme_text = f"Total Points: {total_points}\n"
+    mark_scheme_text += "Marking Points:\n"
+    for idx, point_item in enumerate(mark_scheme.get('points', []), 1):
+        mark_scheme_text += f"{idx}. Worth {point_item.get('point', 1)} point(s): {point_item.get('requirements', 'N/A')}\n"
 
     messages = [{
         "role": "user",
@@ -604,14 +740,22 @@ def mark_worksheet_question(request):
             f"A marking scheme will be given.\n\n"
             f"Here is the question: {question}\n"
             f"Here is the answer you have to mark: {answer}\n"
-            f"And here is a mark scheme for reference: {mark_scheme}.\n\n"
-            f"The total point value for this question is {points}.\n\n"
+            f"And here is the mark scheme for reference:\n{mark_scheme_text}\n"
+            f"The total point value for this question is {total_points}.\n\n"
             "For your response, please follow this JSON schema:\n"
             "{\n"
-            "  correctness: <1 for entirely correct, 0 for incorrect, 2 for partially correct>,\n"
-            "  feedback: <your feedback or grading justification>,\n"
-            "  achievedPoints: <numerical score achieved based on the mark_scheme and the total point value>\n"
+            "  totalPoints: <sum of all achievedPoints from the points array>,\n"
+            "  points: [\n"
+            "    {\n"
+            "      point: <the max point value for this criteria from mark scheme>,\n"
+            "      requirements: <the requirements text from mark scheme>,\n"
+            "      achievedPoints: <points earned for this criteria>,\n"
+            "      feedback: <specific feedback for this criteria>\n"
+            "    },\n"
+            "    ... (one object for each marking criteria)\n"
+            "  ]\n"
             "}\n"
+            "Provide grading for EACH marking point in the mark scheme.\n"
             "Now you may begin."
         )
     }]
@@ -624,11 +768,23 @@ def mark_worksheet_question(request):
                                         "schema": {
                                             "type": "object",
                                             "properties": {
-                                                "correctness": {"type": "integer"},
-                                                "feedback": {"type": "string"},
-                                                "achievedPoints": {"type": "number"},
+                                                "totalPoints": {"type": "number"},
+                                                "points": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "point": {"type": "integer"},
+                                                            "requirements": {"type": "string"},
+                                                            "achievedPoints": {"type": "number"},
+                                                            "feedback": {"type": "string"}
+                                                        },
+                                                        "required": ["point", "requirements", "achievedPoints", "feedback"],
+                                                        "additionalProperties": False
+                                                    }
+                                                }
                                             },
-                                            "required": ["correctness", "feedback", "achievedPoints"],
+                                            "required": ["totalPoints", "points"],
                                             "additionalProperties": False
                                         },
                                         "strict": True
@@ -728,7 +884,7 @@ function_list = [init_session, append_image, append_pdflike, remove_img, remove_
 @app.route("/upload", methods=["POST"])
 def upload_content():
     # Each request runs in its own thread under Flask’s threaded mode
-
+    print("Upload content request received")
     # Extract command from request
     command = request.form.get("command")
     if not command:
@@ -833,5 +989,7 @@ def health():
 def status():
     return jsonify({"status": "busy" if server_status["busy"] else "idle"}), 200
 
+# default to 8080
+PORT = os.getenv("PORT", 61016)
 if __name__ == "__main__":
-    app.run(threaded=True, host="0.0.0.0", port=61016)
+    app.run(threaded=True, host="0.0.0.0", port=PORT)

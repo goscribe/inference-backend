@@ -1,0 +1,38 @@
+[
+  {
+    "role": "system",
+    "content": "Your task is to serve as a study tool - given the info that will be provided next, in form of either text or image, you will try your best to understand them. You will be asked to generate a summary in case we have to check your understanding. You will generate a study guide covering the given information. The guide shall contain 1) a descriptive summary of all given materials in the form of a lecture note, 2) a set of flashcard questions, short in form, along with corresponding answers, 3) an organized worksheet served as an exercise, supplied along with an answer sheet. Your responses will be listened by a front end, so answer only what is being asked, and follow the form. Good Luck!"
+  },
+  {
+    "role": "user",
+    "content": "You will be writing a note and prepare some questions on following materials. Materials will be given"
+  },
+  {
+    "role": "assistant",
+    "content": "Great. I’m ready to create your study tool. Please provide the materials (text or images). Once I have them, I will deliver:\n\n- Descriptive summary: a lecture-note style overview covering all materials.\n- Flashcards: concise Q&A pairs for quick review.\n- Worksheet: organized exercises (with answer sheet) to practice and test understanding.\n\nTo tailor the output, please also share:\n- Target audience or course level (e.g., high school biology, undergrad CS).\n- Approximate length or number of flashcards you’d like (e.g., 15–25).\n- Desired length or scope of the worksheet (e.g., 10–20 problems; include multiple choice, short answer, and calculation problems).\n- Any formatting preferences (plain text vs. bullet-heavy, prefer sections titled Lecture Notes / Flashcards / Worksheet / Answer Key).\n\nWhen you’re ready, paste the materials here (text or image descriptions)."
+  },
+  {
+    "role": "user",
+    "content": "Now, upon all the information either provided to you, or spotted in images,     please generate 10 flashcard questions. The questions shall have difficulty level 'medium'.     FOLLOW STRICTLY THIS FORMAT: \n    1. <Question1> \n 2. <Question2> \n 3. <Question3> \n ...     The answers shall be concise, short, as conforming the the form of flashcards.     Do not include the answers - they will be asked in the next message. Again, do not respond excess words."
+  },
+  {
+    "role": "assistant",
+    "content": "Please provide the materials (text or images) to generate the 10 medium-difficulty flashcard questions. If possible, specify the topic and target audience."
+  },
+  {
+    "role": "user",
+    "content": "Now, generate the corresponding answers.     FOLLOW STRICTLY THIS FORMAT: \n    1. <Answer1> \n 2. <Answer2> \n 3. <Answer3> \n ...     The answers shall be concise, short, as conforming the the form of flashcards.     Again, do not respond excess words."
+  },
+  {
+    "role": "assistant",
+    "content": "Please provide the 10 flashcard questions (or the materials to generate them) so I can supply the concise answers in the requested format."
+  },
+  {
+    "role": "user",
+    "content": "Now, read off the questions and answers you wrote. Convert them into a JSON file according to this format: \n[\n    {\"term\": \"<Question 1>\",\n    \"definition\": \"<Answer 1>\"}, \n    {\"term\": \"<Question 2>\",\n    \"definition\": \"<Answer 2>\"}, \n    {\"term\": \"<Question 3>\",\n    \"definition\": \"<Answer 3>\"}, \n]\nAdhere strictly to this format. When you start your generation, do not include any texts that do not belong to the JSON.\nReturn ONLY the JSON file following \"[...\" You shall NOT have anything like \"json\" or `` in front, ONLY the raw text for the JSON source!!!\nRemember, ONLY THE RAW TEXT, not a code block.\nBe aware of any punctuations that might conflict with JSON syntax. This is extremely important!!! Now, you may begin."
+  },
+  {
+    "role": "assistant",
+    "content": "{\"flashcards\":[]}"
+  }
+]

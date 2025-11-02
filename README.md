@@ -397,23 +397,45 @@ estimatedTime: '30 min',
             "answer": "<Answer 1>",
             "type": "TEXT",
             "options": [Keep this empty],
-            "mark_scheme": "A string that tells an instructor how to mark: what is acceptable, and what is not enough or incorrect."
-            "points": <integer value representing total points for this question>
+            "mark_scheme": {
+                "points": [
+                    {
+                        "point": 1,
+                        "requirements": "Description of what's needed for this point"
+                    }
+                ],
+                "totalPoints": <integer value representing total points for this question>
+            }
         }},
         {{
             "question": "<Question 2>",
             "answer": "<Answer 2>",
             "type": "TEXT",
             "options": [Keep this empty],
-            "mark_scheme": "A string that tells an instructor how to mark: what is acceptable, and what is not enough or incorrect."
-            "points": <integer value representing total points for this question>
+            "mark_scheme": {
+                "points": [
+                    {
+                        "point": 1,
+                        "requirements": "Description of what's needed for this point"
+                    }
+                ],
+                "totalPoints": <integer value representing total points for this question>
+            }
         }},
         {{
             "question": "<Question 3>",
             "answer": "<Answer 3>",
             "type": "MULTIPLE_CHOICE",
             "options": ["<Option 1>", "<Option 2>", "<Option 3>"],
-            "mark_scheme": "For MCQs, have here an answer explanation instead of a mark scheme."
+            "mark_scheme": {
+                "points": [
+                    {
+                        "point": 1,
+                        "requirements": "Answer explanation for this MCQ"
+                    }
+                ],
+                "totalPoints": <integer value representing total points for this question>
+            },
             "points": <integer value representing total points for this question>
         }},
         {{
@@ -421,7 +443,15 @@ estimatedTime: '30 min',
             "answer": "<Answer 4>",
             "type": "NUMERIC",
             "options": [Keep this empty],
-            "mark_scheme": "For numerical value entries, have here an answer explanation instead of a mark scheme."
+            "mark_scheme": {
+                "points": [
+                    {
+                        "point": 1,
+                        "requirements": "Answer explanation for this numeric question"
+                    }
+                ],
+                "totalPoints": <integer value representing total points for this question>
+            },
             "points": <integer value representing total points for this question>
         }},
         {{
@@ -429,15 +459,31 @@ estimatedTime: '30 min',
             "answer": "<Answer 5>",
             "type": "TRUE_FALSE",
             "options": [Keep this empty],
-            "mark_scheme": "For true or false questions, have here an answer explanation instead of a mark scheme."
+            "mark_scheme": {
+                "points": [
+                    {
+                        "point": 1,
+                        "requirements": "Answer explanation for this true/false question"
+                    }
+                ],
+                "totalPoints": <integer value representing total points for this question>
+            },
             "points": <integer value representing total points for this question>
         }},
         {{
             "question": "<Question 6>",
             "answer": "<Answer 6>",
             "type": "MATCHING",
-            "options": ["Option 1", "Option 2", "Option 3"]
-            "mark_scheme": "For matching questions, have here an answer explanation instead of a mark scheme."
+            "options": ["Option 1", "Option 2", "Option 3"],
+            "mark_scheme": {
+                "points": [
+                    {
+                        "point": 1,
+                        "requirements": "Answer explanation for this matching question"
+                    }
+                ],
+                "totalPoints": <integer value representing total points for this question>
+            },
             "points": <integer value representing total points for this question>
         }}]
 ```
@@ -445,9 +491,16 @@ estimatedTime: '30 min',
 ## Marking JSON Format:
 ```
 {
-correctness: (Int) 1 for entirely correct, 0 for incorrect, 2 for partially correct,
-feedback: "AI feedbacks"
-achievedPoints: <numerical score achieved based on the mark_scheme and the total point value>
+  totalPoints: <sum of all achievedPoints (total points earned by student)>,
+  points: [
+    {
+      point: <max points for this criteria>,
+      requirements: <requirements text from mark scheme>,
+      achievedPoints: <points earned for this criteria>,
+      feedback: <specific feedback for this criteria>
+    },
+    ... (one object for each marking point in the mark scheme)
+  ]
 }
 ```
 
