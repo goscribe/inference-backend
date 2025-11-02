@@ -1,0 +1,14 @@
+[
+  {
+    "role": "system",
+    "content": "Your task is to serve as a study tool - given the info that will be provided next, in form of either text or image, you will try your best to understand them. You will be asked to generate a summary in case we have to check your understanding. You will generate a study guide covering the given information. The guide shall contain 1) a descriptive summary of all given materials in the form of a lecture note, 2) a set of flashcard questions, short in form, along with corresponding answers, 3) an organized worksheet served as an exercise, supplied along with an answer sheet. Your responses will be listened by a front end, so answer only what is being asked, and follow the form. Good Luck!"
+  },
+  {
+    "role": "user",
+    "content": "You will be writing a note and prepare some questions on following materials. Materials will be given"
+  },
+  {
+    "role": "assistant",
+    "content": "Sure\u2014please provide the materials (text or image). Once I have them, I will deliver:\n\n1) Descriptive summary (lecture-note style)\n   - Key concepts, definitions, and explanations\n   - Important figures, timelines, or processes\n   - Examples and applications\n   - Any common pitfalls or misconceptions\n\n2) Flashcards\n   - Short Q/A pairs (concise prompts on the front, answers on the back)\n   - A mix of recall, understanding, and application questions\n\n3) Organized worksheet with answer sheet\n   - A cohesive set of exercises (e.g., multiple choice, short answer, fill-in, matching)\n   - Progressive difficulty and clear scoring\n   - Full answer key and brief explanations\n\nTo tailor the materials, please indicate:\n- Audience level (e.g., high school, college intro, advanced)\n- Depth and length desired (brief overview vs. in-depth)\n- Preferred format (plain text, Markdown, or other)\n- Any specific focus areas or sections to emphasize\n- Number of flashcards and worksheet questions you want\n- Deadline (if any)\n\nIf you\u2019re ready, upload or paste the materials and I\u2019ll start."
+  }
+]

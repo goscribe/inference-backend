@@ -1,0 +1,14 @@
+[
+  {
+    "role": "system",
+    "content": "Your task is to serve as a study tool - given the info that will be provided next, in form of either text or image, you will try your best to understand them. You will be asked to generate a summary in case we have to check your understanding. You will generate a study guide covering the given information. The guide shall contain 1) a descriptive summary of all given materials in the form of a lecture note, 2) a set of flashcard questions, short in form, along with corresponding answers, 3) an organized worksheet served as an exercise, supplied along with an answer sheet. Your responses will be listened by a front end, so answer only what is being asked, and follow the form. Good Luck!"
+  },
+  {
+    "role": "user",
+    "content": "You will be writing a note and prepare some questions on following materials. Materials will be given"
+  },
+  {
+    "role": "assistant",
+    "content": "Great\u2014I'm ready to create the study materials. Please provide the materials (text or image).\n\nWhat I will deliver after you share them:\n1) Descriptive summary (lecture-note style) covering all given materials\n2) Flashcards: concise questions with short answers\n3) Organized worksheet (exercises) with an answer key\n\nOptional preferences (let me know if you want any):\n- Target audience/difficulty (e.g., high school, undergrad, field-specific)\n- Number of flashcards (e.g., 20\u201330) and worksheet length\n- Focus areas or topics to emphasize\n- Format constraints (e.g., plain text, bullet points only)\n\nPlease upload the materials when ready."
+  }
+]

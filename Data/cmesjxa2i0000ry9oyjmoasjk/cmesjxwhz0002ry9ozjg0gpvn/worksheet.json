@@ -1,0 +1,144 @@
+{
+  "id": 0,
+  "title": "Studious LMS Features and Workflows Worksheet",
+  "description": "A MEDIUM-difficulty worksheet assessing understanding of Studious LMS core modules, workflows, collaboration features, and AI-assisted tools.",
+  "difficulty": "MEDIUM",
+  "estimatedTime": "60 minutes",
+  "problems": [
+    {
+      "question": "Which Studious LMS feature ensures that schedules, classes, and events stay synchronized across the platform when changes are made?",
+      "answer": "C) Scheduling and Attendance",
+      "type": "MULTIPLE_CHOICE",
+      "options": [
+        "A) Academic Management",
+        "B) File Management",
+        "C) Scheduling and Attendance",
+        "D) Communication Systems"
+      ],
+      "mark_scheme": {
+        "points": [
+          {
+            "point": 1,
+            "requirements": "Identify the Scheduling and Attendance module that keeps schedules synchronized across the platform."
+          }
+        ],
+        "totalPoints": 1
+      }
+    },
+    {
+      "question": "Explain how Studious supports the end-to-end academic workflow from assignment creation to grading, including deadlines, grading weights, and review via the platform.",
+      "answer": "Studious provides an end-to-end workflow: teachers create tasks with deadlines, define grading weights and clear instructions; students submit within the platform; teachers review and grade within the platform; built-in mark schemes and grading boundaries ensure consistency and fairness.",
+      "type": "TEXT",
+      "options": [],
+      "mark_scheme": {
+        "points": [
+          {
+            "point": 1,
+            "requirements": "Describe the end-to-end workflow from task creation to grading, including deadlines, grading weights, submission, review, and the role of mark schemes."
+          }
+        ],
+        "totalPoints": 1
+      }
+    },
+    {
+      "question": "What mechanism in Studious provides real-time feedback and keeps discussions relevant across multiple active classes?",
+      "answer": "B) Lab Chats with AI-assisted support",
+      "type": "MULTIPLE_CHOICE",
+      "options": [
+        "A) Built-in messaging",
+        "B) Lab Chats with AI-assisted support",
+        "C) Announcements",
+        "D) File attachments"
+      ],
+      "mark_scheme": {
+        "points": [
+          {
+            "point": 1,
+            "requirements": "Identify the AI-assisted Lab Chats feature as the mechanism for real-time feedback across classes."
+          }
+        ],
+        "totalPoints": 1
+      }
+    },
+    {
+      "question": "Describe the file management workflow: uploading resources, student submissions, review and grading without leaving the platform, and the recovery mechanism in case of connection drops.",
+      "answer": "The file management workflow: a clear, secure file system for resources; uploads linked to relevant context; students submit work via the same interface; teachers review and grade inside the platform; uploads have progress indicators and automatic recovery; if a connection drops, Studious resumes uploads safely without data loss.",
+      "type": "TEXT",
+      "options": [],
+      "mark_scheme": {
+        "points": [
+          {
+            "point": 1,
+            "requirements": "Explain the end-to-end file management workflow including uploads, submissions, review, and data recovery on interruptions."
+          }
+        ],
+        "totalPoints": 1
+      }
+    },
+    {
+      "question": "Discuss the role of AI-assisted Lab Chats in guiding problem-solving sessions and potential limitations.",
+      "answer": "Lab Chats connect to a class for AI-assisted guided discussions or problem-solving sessions; potential limitations include AI accuracy issues, possible over-reliance, and the need for human oversight and privacy considerations.",
+      "type": "TEXT",
+      "options": [],
+      "mark_scheme": {
+        "points": [
+          {
+            "point": 1,
+            "requirements": "Explain the purpose of Lab Chats and identify at least two potential limitations."
+          }
+        ],
+        "totalPoints": 1
+      }
+    },
+    {
+      "question": "Which module would a teacher use to connect a class event to an assignment and automatically update attendance history?",
+      "answer": "C) Scheduling and Attendance",
+      "type": "MULTIPLE_CHOICE",
+      "options": [
+        "A) Academic Management",
+        "B) File Management",
+        "C) Scheduling and Attendance",
+        "D) Communication Systems"
+      ],
+      "mark_scheme": {
+        "points": [
+          {
+            "point": 1,
+            "requirements": "Identify Scheduling and Attendance as the module that links events to assignments and updates attendance history."
+          }
+        ],
+        "totalPoints": 1
+      }
+    },
+    {
+      "question": "Propose a plan for evaluating student participation and attendance trends using the built-in attendance history and reporting features.",
+      "answer": "Plan: collect attendance history to compute participation trends; analyze per class, subject, or student; track patterns over time; use reports to identify at-risk students; correlate attendance with assignment submissions and performance; set improvement targets and monitor dashboards; produce periodic summaries for stakeholders.",
+      "type": "TEXT",
+      "options": [],
+      "mark_scheme": {
+        "points": [
+          {
+            "point": 1,
+            "requirements": "Describe a plan that uses attendance history and reports to identify trends and at-risk students, including actions to improve attendance."
+          }
+        ],
+        "totalPoints": 1
+      }
+    },
+    {
+      "question": "Assess how the built-in announcements and messaging features support real-time alignment between teachers and students, including use-cases like reminders, feedback, and attachments.",
+      "answer": "The built-in announcements provide real-time updates to all students; messaging supports one-on-one and group conversations; mentions and notifications ensure messages are seen; attachments enable sharing of study materials and feedback; use-cases include posting reminders for assignments, sharing feedback on submissions, and distributing attachments linked to lessons.",
+      "type": "TEXT",
+      "options": [],
+      "mark_scheme": {
+        "points": [
+          {
+            "point": 1,
+            "requirements": "Explain how announcements and messaging enable real-time communication and give practical use-cases."
+          }
+        ],
+        "totalPoints": 1
+      }
+    }
+  ]
+}
