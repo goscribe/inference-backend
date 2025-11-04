@@ -25,10 +25,62 @@ CORS(app)  # allow all origins for frontend JS
 # Global state
 server_status = {"busy": False}
 
+# ==================== LOGGING MIDDLEWARE ====================
+@app.before_request
+def log_request():
+    """Log incoming request details"""
+    g.start_time = time.time()
+    timestamp = datetime.now().strftime("%H:%M:%S")
+    
+    # Get command if it exists
+    command = request.form.get('command', 'N/A')
+    print(f"\n[{timestamp}] → {request.method} {request.path} | command: {command}")
+    
+    # Log form data (exclude common fields, show important ones)
+    if request.form:
+        excluded_keys = {'user', 'session', 'command'}
+        form_items = {k: v for k, v in request.form.items() if k not in excluded_keys}
+        if form_items:
+            for key, value in form_items.items():
+                # Truncate long values
+                if len(str(value)) > 100:
+                    print(f"  {key}: {str(value)[:100]}...")
+                else:
+                    print(f"  {key}: {value}")
+    
+    # Log JSON data
+    if request.is_json:
+        try:
+            json_data = request.get_json()
+            json_str = json.dumps(json_data, indent=2)
+            if len(json_str) > 300:
+                print(f"  JSON: {json_str[:300]}...")
+            else:
+                print(f"  JSON: {json_str}")
+        except:
+            pass
+    
+    # Log files
+    if request.files:
+        for key, file in request.files.items():
+            print(f"  file: {file.filename}")
+
+@app.after_request
+def log_response(response):
+    """Log outgoing response details"""
+    elapsed_time = time.time() - g.start_time if hasattr(g, 'start_time') else 0
+    timestamp = datetime.now().strftime("%H:%M:%S")
+    
+    status_emoji = "✓" if response.status_code < 400 else "✗"
+    print(f"[{timestamp}] ← {status_emoji} {response.status_code} | {elapsed_time:.2f}s\n")
+    
+    return response
+# ==================== END LOGGING MIDDLEWARE ====================
+
+
 # Define commands and corresponding functions
 command_list = ["init_session", "append_image", "append_pdflike", "remove_img", "remove_pdf", "analyse_pdf", "analyse_img", "generate_study_guide", "generate_flashcard_questions", "generate_worksheet_questions", "mark_worksheet_questions", "inference_from_prompt", "generate_podcast"]
 
-model = "gemma3:27b-it-qat"  
 load_dotenv()
 ROOT_DIR = "Data"
 
@@ -36,6 +88,8 @@ SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_SERVICE_ROLE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
 
 supabase = create_client(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
+
+
 
 
 
