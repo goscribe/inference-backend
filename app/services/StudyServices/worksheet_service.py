@@ -32,7 +32,7 @@ def generate_worksheet_json(messages, worksheet_id, num_quests):
         "role": "user",
         "content": f"""Now, read off the questions and answers you wrote. Convert them into a JSON file according to this format: 
 {{
-    "id": {worksheet_id},
+    "id": {session},
     "title": "<A Title For Your Worksheet>",
     "description": "<Make a Description for this Worksheet>",
     "difficulty": "<Choice from these: EASY, MEDIUM, HARD>",
@@ -43,48 +43,90 @@ def generate_worksheet_json(messages, worksheet_id, num_quests):
             "answer": "<Answer 1>",
             "type": "TEXT",
             "options": [Keep this empty],
-            "mark_scheme": "A string that tells an instructor how to mark: what is acceptable, and what is not enough or incorrect. Include also what is required to achieve a certain amount of points",
-            "points": <integer value representing total points for this question>
+            "mark_scheme": {{
+                "points": [
+                    {{
+                        "point": 1,
+                        "requirements": "Description of what's needed for this point"
+                    }}
+                ],
+                "totalPoints": <integer value representing total points for this question>
+            }}
         }},
         {{
             "question": "<Question 2>",
             "answer": "<Answer 2>",
             "type": "TEXT",
             "options": [Keep this empty],
-            "mark_scheme": "A string that tells an instructor how to mark: what is acceptable, and what is not enough or incorrect. Include also what is required to achieve a certain amount of points",
-            "points": <integer value representing total points for this question>
+            "mark_scheme": {{
+                "points": [
+                    {{
+                        "point": 1,
+                        "requirements": "Description of what's needed for this point"
+                    }}
+                ],
+                "totalPoints": <integer value representing total points for this question>
+            }}
         }},
         {{
             "question": "<Question 3>",
             "answer": "<Answer 3>",
             "type": "MULTIPLE_CHOICE",
             "options": ["<Option 1>", "<Option 2>", "<Option 3>"],
-            "mark_scheme": "an answer explanation",
-            "points": <integer value representing total points for this question>
+            "mark_scheme": {{
+                "points": [
+                    {{
+                        "point": 1,
+                        "requirements": "Description of what's needed for this point"
+                    }}
+                ],
+                "totalPoints": <integer value representing total points for this question>
+            }}
         }},
         {{
             "question": "<Question 4>",
             "answer": "<Answer 4>",
             "type": "NUMERIC",
             "options": [Keep this empty],
-            "mark_scheme": "an answer explanation",
-            "points": <integer value representing total points for this question>
+            "mark_scheme": {{
+                "points": [
+                    {{
+                        "point": 1,
+                        "requirements": "Description of what's needed for this point"
+                    }}
+                ],
+                "totalPoints": <integer value representing total points for this question>
+            }}
         }},
         {{
             "question": "<Question 5>",
             "answer": "<Answer 5>",
             "type": "TRUE_FALSE",
             "options": [Keep this empty],
-            "mark_scheme": "an answer explanation",
-            "points": <integer value representing total points for this question>
+            "mark_scheme": {{
+                "points": [
+                    {{
+                        "point": 1,
+                        "requirements": "Description of what's needed for this point"
+                    }}
+                ],
+                "totalPoints": <integer value representing total points for this question>
+            }}
         }},
         {{
             "question": "<Question 6>",
             "answer": "<Answer 6>",
             "type": "MATCHING",
             "options": ["Option 1", "Option 2", "Option 3"],
-            "mark_scheme": "an answer explanation",
-            "points": <integer value representing total points for this question>
+            "mark_scheme": {{
+                "points": [
+                    {{
+                        "point": 1,
+                        "requirements": "Description of what's needed for this point"
+                    }}
+                ],
+                "totalPoints": <integer value representing total points for this question>
+            }}
         }}
     ]
 }}
@@ -92,7 +134,7 @@ Adhere strictly to this format. Return ONLY the JSON object, no code blocks or e
 Be careful about punctuation and escaping. One important note: for multiple choice questions, 
 do NOT put the choices in the question. Only write them in the "options" entry. 
 You would have to identify whether your original questions includes these choices and avoid writing them in the "question" entry. 
-Now, you may begin. You must produce exactly {num_quests} problems in total."""
+Now, you may begin. You must produce exactly {num_questions} problems in total."""
     })
 
     resp = LLM_inference(messages=messages, json_output=True, 
@@ -110,8 +152,8 @@ Now, you may begin. You must produce exactly {num_quests} problems in total."""
                                                 "estimatedTime": {"type": "string"},
                                                 "problems": {
                                                     "type": "array",
-                                                    "minItems": num_quests,
-                                                    "maxItems": num_quests,
+                                                    "minItems": num_questions,
+                                                    "maxItems": num_questions,
                                                     "items": {
                                                         "type": "object",
                                                         "properties": {
@@ -122,16 +164,33 @@ Now, you may begin. You must produce exactly {num_quests} problems in total."""
                                                                 "type": "array",
                                                                 "items": {"type": "string"}
                                                             },
-                                                            "mark_scheme": {"type": "string"},
-                                                            "points": {"type": "integer"}
+                                                            "mark_scheme": {
+                                                                "type": "object",
+                                                                "properties": {
+                                                                    "points": {
+                                                                        "type": "array",
+                                                                        "items": {
+                                                                            "type": "object",
+                                                                            "properties": {
+                                                                                "point": {"type": "integer"},
+                                                                                "requirements": {"type": "string"}
+                                                                            },
+                                                                            "required": ["point", "requirements"],
+                                                                            "additionalProperties": False
+                                                                        }
+                                                                    },
+                                                                    "totalPoints": {"type": "integer"}
+                                                                },
+                                                                "required": ["points", "totalPoints"],
+                                                                "additionalProperties": False
+                                                            }
                                                         },
                                                         "required": [
                                                             "question",
                                                             "answer",
                                                             "type",
                                                             "options",
-                                                            "mark_scheme",
-                                                            "points"
+                                                            "mark_scheme"
                                                         ],
                                                         "additionalProperties": False
                                                     }
@@ -158,14 +217,22 @@ def mark_question(question, answer, mark_scheme, points):
             f"A marking scheme will be given.\n\n"
             f"Here is the question: {question}\n"
             f"Here is the answer you have to mark: {answer}\n"
-            f"And here is a mark scheme for reference: {mark_scheme}.\n\n"
-            f"The total point value for this question is {points}.\n\n"
+            f"And here is the mark scheme for reference:\n{mark_scheme_text}\n"
+            f"The total point value for this question is {total_points}.\n\n"
             "For your response, please follow this JSON schema:\n"
             "{\n"
-            "  correctness: <1 for entirely correct, 0 for incorrect, 2 for partially correct>,\n"
-            "  feedback: <your feedback or grading justification>,\n"
-            "  achievedPoints: <numerical score achieved based on the mark_scheme and the total point value>\n"
+            "  totalPoints: <sum of all achievedPoints from the points array>,\n"
+            "  points: [\n"
+            "    {\n"
+            "      point: <the max point value for this criteria from mark scheme>,\n"
+            "      requirements: <the requirements text from mark scheme>,\n"
+            "      achievedPoints: <points earned for this criteria>,\n"
+            "      feedback: <specific feedback for this criteria>\n"
+            "    },\n"
+            "    ... (one object for each marking criteria)\n"
+            "  ]\n"
             "}\n"
+            "Provide grading for EACH marking point in the mark scheme.\n"
             "Now you may begin."
         )
     }]
@@ -178,11 +245,23 @@ def mark_question(question, answer, mark_scheme, points):
                                         "schema": {
                                             "type": "object",
                                             "properties": {
-                                                "correctness": {"type": "integer"},
-                                                "feedback": {"type": "string"},
-                                                "achievedPoints": {"type": "number"},
+                                                "totalPoints": {"type": "number"},
+                                                "points": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "point": {"type": "integer"},
+                                                            "requirements": {"type": "string"},
+                                                            "achievedPoints": {"type": "number"},
+                                                            "feedback": {"type": "string"}
+                                                        },
+                                                        "required": ["point", "requirements", "achievedPoints", "feedback"],
+                                                        "additionalProperties": False
+                                                    }
+                                                }
                                             },
-                                            "required": ["correctness", "feedback", "achievedPoints"],
+                                            "required": ["totalPoints", "points"],
                                             "additionalProperties": False
                                         },
                                         "strict": True
