@@ -655,4 +655,5 @@ def status():
     return jsonify({"status": "busy" if server_status["busy"] else "idle"}), 200
 
 if __name__ == "__main__":
+    PORT = os.getenv("PORT", 61016)
     app.run(threaded=True, host="0.0.0.0", port=61016)
