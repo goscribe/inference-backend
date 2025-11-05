@@ -27,12 +27,11 @@ def generate_worksheet_a(messages):
     return messages
 
 
-def generate_worksheet_json(messages, worksheet_id, num_quests):
+def generate_worksheet_json(messages, worksheet_id, num_questions):
     messages.append({
         "role": "user",
         "content": f"""Now, read off the questions and answers you wrote. Convert them into a JSON file according to this format: 
 {{
-    "id": {session},
     "title": "<A Title For Your Worksheet>",
     "description": "<Make a Description for this Worksheet>",
     "difficulty": "<Choice from these: EASY, MEDIUM, HARD>",
@@ -217,8 +216,8 @@ def mark_question(question, answer, mark_scheme, points):
             f"A marking scheme will be given.\n\n"
             f"Here is the question: {question}\n"
             f"Here is the answer you have to mark: {answer}\n"
-            f"And here is the mark scheme for reference:\n{mark_scheme_text}\n"
-            f"The total point value for this question is {total_points}.\n\n"
+            f"And here is the mark scheme for reference:\n{mark_scheme}\n"
+            f"The total point value for this question is {points}.\n\n"
             "For your response, please follow this JSON schema:\n"
             "{\n"
             "  totalPoints: <sum of all achievedPoints from the points array>,\n"

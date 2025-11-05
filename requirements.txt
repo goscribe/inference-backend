@@ -1,4 +1,4 @@
-# Core dependencies
+`# Core dependencies
 openai>=1.0.0
 python-dotenv>=1.0.0
 
@@ -20,4 +20,7 @@ supabase>=2.0.0
 
 # Markdown processing
 markdown-it-py>=3.0.0
+
+# Production server
+gunicorn>=21.0.0
 

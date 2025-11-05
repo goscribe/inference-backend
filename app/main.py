@@ -1,7 +1,9 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, g
 from flask_cors import CORS
 import os
 import json
+import time
+from datetime import datetime
 # from fileConverter import *
 from app.services.FileServices.file_service import read_pdf_images, read_pdf, read_images
 from app.services.StudyServices.study_guide_service import generate_summary, generate_mindmap_mermaid
@@ -423,7 +425,7 @@ def generate_worksheet_questions(request):
     print("Generating Worksheet Questions Successful.")
     messages = generate_worksheet_a(messages)
     print("Generating Worksheet Answers Successful.")
-    messages = generate_worksheet_json(messages, worksheet_id=session, num_quests=num_questions)
+    messages = generate_worksheet_json(messages, worksheet_id=session, num_questions=num_questions)
 
     with open(f"{ROOT_DIR}/{user}/{session}/messages.json", "w", encoding="utf-8") as f:
         json.dump(messages, f, indent=2, ensure_ascii=False)
@@ -656,4 +658,4 @@ def status():
 
 if __name__ == "__main__":
     PORT = os.getenv("PORT", 61016)
-    app.run(threaded=True, host="0.0.0.0", port=61016)
+    app.run(threaded=True, host="0.0.0.0", port=PORT)
