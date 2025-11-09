@@ -3,13 +3,21 @@ from flask_cors import CORS
 import os
 import json
 import time
+import traceback
 from datetime import datetime
 # from fileConverter import *
 from app.services.FileServices.file_service import read_pdf_images, read_pdf, read_images
 from app.services.StudyServices.study_guide_service import generate_summary, generate_mindmap_mermaid
 from app.services.StudyServices.flashcard_service import generate_flashcards_q, generate_flashcards_a, generate_flashcards_json
 from app.services.StudyServices.worksheet_service import generate_worksheet_q, generate_worksheet_a, generate_worksheet_json, mark_question
-from app.services.StudyServices.podcast_service import generate_podcast_script
+from app.services.StudyServices.podcast_service import (
+    generate_podcast_script,
+    generate_podcast_structure,
+    generate_podcast_summary,
+    split_dialogue_segment,
+    estimate_segment_duration,
+    create_full_transcript
+)
 from app.services.ChatService.chat_service import prompt_input
 from app.utils.utils import update_memory, safe_json_parse
 import requests
@@ -20,6 +28,8 @@ from app.models.LLM_inference import LLM_inference
 from dotenv import load_dotenv
 from eleven_labs import *
 from supabase import create_client
+from openai import OpenAI
+from pydub import AudioSegment
 
 app = Flask(__name__)
 CORS(app)  # allow all origins for frontend JS
@@ -81,7 +91,25 @@ def log_response(response):
 
 
 # Define commands and corresponding functions
-command_list = ["init_session", "append_image", "append_pdflike", "remove_img", "remove_pdf", "analyse_pdf", "analyse_img", "generate_study_guide", "generate_flashcard_questions", "generate_worksheet_questions", "mark_worksheet_questions", "inference_from_prompt", "generate_podcast"]
+command_list = [
+    "init_session", 
+    "append_image", 
+    "append_pdflike", 
+    "remove_img", 
+    "remove_pdf", 
+    "analyse_pdf", 
+    "analyse_img", 
+    "generate_study_guide", 
+    "generate_flashcard_questions", 
+    "generate_worksheet_questions", 
+    "mark_worksheet_questions", 
+    "inference_from_prompt", 
+    "generate_podcast_structure",  # Generate structure with LLM
+    "generate_podcast_audio_from_text",  # TTS + upload from text
+    "generate_image",  # AI image generation
+    "generate_podcast_image",  # Generate podcast cover image from summary
+    # "regenerate_podcast_segment"  # Regenerate a specific segment
+]
 
 load_dotenv()
 ROOT_DIR = "Data"
@@ -490,63 +518,477 @@ def inference_from_prompt(request):
     return {"last_response": last_content}, 200
 
 
-def generate_podcast(request):
+def generate_podcast_structure_endpoint(request):
+    """
+    Generate podcast structure using LLM.
+    Returns the structured content - frontend stores it.
+    """
     user = request.form.get("user")
     session = request.form.get("session")
-    podcast_id = request.form.get("podcast_id")
+    
     if not user or not session:
         return {"error": "Session not initialized."}, 400
 
-    prompt = request.form.get("prompt")
-    if not prompt:
-        prompt = ""
+    # Get podcast parameters
+    title = request.form.get("title", "Untitled Podcast")
+    description = request.form.get("description", "")
+    user_prompt = request.form.get("prompt", "")
+    generate_intro = request.form.get("generate_intro", "true").lower() == "true"
+    generate_outro = request.form.get("generate_outro", "true").lower() == "true"
+    
+    # Parse speakers
+    speakers_json = request.form.get("speakers", "[]")
 
+    try:
+        speakers = json.loads(speakers_json)
+        if not speakers:
+            speakers = [{"id": "default", "role": "host"}]
+    except json.JSONDecodeError:
+        return {"error": "Invalid speakers JSON format"}, 400
+    
+    print(f"🎙️ Generating podcast structure: '{title}'")
+    
+    # Load conversation history
     with open(f"{ROOT_DIR}/{user}/{session}/messages.json", "r") as f:
         messages = json.load(f)
+
+    try:
+        # Generate podcast structure
+        messages, structured_content = generate_podcast_structure(
+            messages,
+            title,
+            description,
+            user_prompt,
+            speakers,
+        )
         
-    messages = generate_podcast_script(messages, prompt)
+        # Save updated messages
+        with open(f"{ROOT_DIR}/{user}/{session}/messages.json", "w") as f:
+            json.dump(messages, f, indent=2)
+        
+        print(f"✅ Generated structure with {len(structured_content.get('segments', []))} segments")
+        
+        # Just return structure - frontend will store it
+        return {
+            "success": True,
+            "structure": structured_content
+        }, 200
     
-    with open(f"{ROOT_DIR}/{user}/{session}/messages.json", "w") as f:
-        json.dump(messages, f, indent=2)
-        
-    last_content = messages[-1].get("content", "")
+    except Exception as e:
+        print(f"❌ Error generating structure: {e}")
+        import traceback
+        traceback.print_exc()
+        return {"error": f"Failed to generate structure: {str(e)}"}, 500
 
-    audio_dir = f"{ROOT_DIR}/{user}/{session}/podcasts"
-    if os.path.exists(audio_dir):
-        shutil.rmtree(audio_dir)  # remove the entire directory and contents
-    os.makedirs(audio_dir)  # recreate the directory
-
-
-    last_content = messages[-1].get("content", "")
+def generate_podcast_audio_from_text(request):
+    """
+    Generate audio from provided text and upload to Supabase.
+    Handles both single-speaker and multi-speaker dialogue.
+    
+    For dialogue, text should be formatted like:
+    HOST: Welcome to the show!
+    GUEST: Thanks for having me!
+    """
+    user = request.form.get("user")
+    session = request.form.get("session")
+    podcast_id = request.form.get("podcast_id")
+    segment_index = request.form.get("segment_index")
+    text = request.form.get("text")
+    
+    # Parse speakers JSON (required for dialogue)
+    speakers_json = request.form.get("speakers", "[]")
+    try:
+        speakers = json.loads(speakers_json)
+    except json.JSONDecodeError:
+        return {"error": "Invalid speakers JSON format"}, 400
+    
+    if not all([user, session, podcast_id, text]):
+        return {"error": "Missing required fields: user, session, podcast_id, text"}, 400
+    
+    if segment_index is None:
+        return {"error": "segment_index is required"}, 400
     
     try:
-        parsed = json.loads(last_content)
-        scripts = parsed.get("scripts", []) 
-        with open(f"{ROOT_DIR}/{user}/{session}/scripts.json", "w", encoding="utf-8") as f:
-            json.dump(scripts, f, indent=2, ensure_ascii=False)
-        print("Generating Scripts JSON Successful.")
-    except json.JSONDecodeError as e:
-        print("⚠️ Failed to parse JSON. Raw output:")
-        print(model_output)
-        print("Error:", e)
-        return {"error": "Invalid JSON returned by model."}, 500
+        segment_index = int(segment_index)
+    except ValueError:
+        return {"error": "segment_index must be an integer"}, 400
     
-    for i in range(len(scripts)):
-        audio_path = f"{audio_dir}/{i}.mp3"
-        text_to_speech(scripts[i], audio_path)
-        print(f"Finished generating audio for section {i}")
+    print(f"🎵 Generating audio for segment {segment_index} (podcast: {podcast_id})")
+    
+    # Create audio directory
+    audio_dir = f"{ROOT_DIR}/{user}/{session}/podcasts/{podcast_id}"
+    os.makedirs(audio_dir, exist_ok=True)
+    
+    try:
+        uploaded_files = []
+        
+        # Check if this is dialogue (contains speaker markers like "SPEAKER:")
+        # Look for pattern: WORD(S): at start of lines
+        is_dialogue = False
+        for line in text.split('\n'):
+            line_stripped = line.strip().upper()
+            if ':' in line_stripped:
+                potential_speaker = line_stripped.split(':', 1)[0].strip()
+                # Check if this speaker exists in speakers list
+                if speakers:
+                    for speaker in speakers:
+                        if (potential_speaker == speaker['role'].upper() or 
+                            potential_speaker == speaker.get('name', '').upper()):
+                            is_dialogue = True
+                            break
+                if is_dialogue:
+                    break
+        
+        if is_dialogue:
+            print(f"   Detected dialogue, splitting into parts...")
+            
+            # Split dialogue into parts
+            dialogue_parts = split_dialogue_segment(text, speakers)
+            
+            # Generate individual audio files
+            part_files = []
+            total_duration = 0
+            
+            for part_idx, part in enumerate(dialogue_parts):
+                audio_filename = f"segment_{segment_index}_part_{part_idx}.mp3"
+                audio_path = f"{audio_dir}/{audio_filename}"
+                
+                # Generate TTS
+                text_to_speech(part['text'], audio_path, voice_id=part['voiceId'])
+                duration = estimate_segment_duration(part['text'])
+                total_duration += duration
+                
+                part_files.append(audio_path)
+                print(f"      ✅ Part {part_idx}: {part['speaker']} ({duration}s)")
+            
+            # Concatenate all parts into one audio file
+            print(f"   🔗 Joining {len(part_files)} parts into one file...")
+            combined_audio = AudioSegment.empty()
+            for part_file in part_files:
+                audio_segment = AudioSegment.from_mp3(part_file)
+                combined_audio += audio_segment
+            
+            # Export combined file
+            combined_filename = f"segment_{segment_index}.mp3"
+            combined_path = f"{audio_dir}/{combined_filename}"
+            combined_audio.export(combined_path, format="mp3")
+            
+            # Upload combined file to Supabase
+            object_key = f"{user}/{session}/podcasts/{podcast_id}/{combined_filename}"
+            with open(combined_path, "rb") as f:
+                supabase.storage.from_("media").upload(
+                    object_key,
+                    f,
+                    file_options={"content-type": "audio/mpeg"}
+                )
+            
+            # Clean up individual part files
+            for part_file in part_files:
+                if os.path.exists(part_file):
+                    os.remove(part_file)
+            
+            print(f"   ✅ Combined audio uploaded ({total_duration}s) -> {object_key}")
+            
+            return {
+                "success": True,
+                "segmentIndex": segment_index,
+                "objectKey": object_key,
+                "duration": total_duration,
+                "type": "dialogue",
+                "partCount": len(dialogue_parts)
+            }, 200
+        
+        else:
+            # Single speaker - need voice_id
+            voice_id = request.form.get("voice_id")
+            if not voice_id:
+                # Try to get from first speaker
+                if speakers:
+                    voice_id = speakers[0]["id"]
+                else:
+                    return {"error": "voice_id required for single-speaker segments"}, 400
+            
+            audio_filename = f"segment_{segment_index}.mp3"
+            audio_path = f"{audio_dir}/{audio_filename}"
+            
+            # Generate TTS
+            text_to_speech(text, audio_path, voice_id=voice_id)
+            duration = estimate_segment_duration(text)
+            
+            # Upload to Supabase
+            object_key = f"{user}/{session}/podcasts/{podcast_id}/{audio_filename}"
         with open(audio_path, "rb") as f:
             supabase.storage.from_("media").upload(
-                f"{user}/{session}/podcasts/{podcast_id}/{i}",
+                    object_key,
                 f,
                 file_options={"content-type": "audio/mpeg"}
             )
     
-    return {"script": last_content}, 200
+            print(f"   ✅ Generated and uploaded ({duration}s) -> {object_key}")
+            
+            return {
+                "success": True,
+                "segmentIndex": segment_index,
+                "objectKey": object_key,
+                "duration": duration,
+                "type": "monologue"
+            }, 200
+    
+    except Exception as e:
+        print(f"❌ Error generating audio: {e}")
+        import traceback
+        traceback.print_exc()
+        return {"error": f"Failed to generate audio: {str(e)}"}, 500
 
 
+def generate_image(request):
+    """
+    Generate an image using DALL-E 2 (fastest model)
+    
+    Parameters:
+    - prompt: Text description of the image to generate
+    - user: User ID (optional, for file organization)
+    - session: Session ID (optional, for file organization)
+    - size: Image size - "256x256", "512x512", or "1024x1024" (default: "512x512")
+    
+    Returns:
+    - image_url: URL of the generated image (from OpenAI, temporary)
+    - local_path: Path where image is saved locally
+    - supabase_url: Public URL from Supabase storage (if user/session provided)
+    """
+    prompt = request.form.get("prompt")
+    if not prompt:
+        return {"error": "No prompt provided"}, 400
+    
+    user = request.form.get("user")
+    session = request.form.get("session")
+    size = request.form.get("size", "512x512")  # Default to medium size for speed
+    
+    # Validate size
+    valid_sizes = ["256x256", "512x512", "1024x1024"]
+    if size not in valid_sizes:
+        return {"error": f"Invalid size. Must be one of: {', '.join(valid_sizes)}"}, 400
+    
+    try:
+        # Initialize OpenAI client
+        api_key = os.getenv("OPENAI_API_KEY")
+        client = OpenAI(api_key=api_key)
+        
+        print(f"Generating image with prompt: {prompt[:100]}...")
+        
+        # Generate image using DALL-E 2 (faster than DALL-E 3)
+        response = client.images.generate(
+            model="dall-e-2",  # Fastest model
+            prompt=prompt,
+            size=size,
+            quality="standard",
+            n=1,
+        )
+        
+        image_url = response.data[0].url
+        print(f"✓ Image generated: {image_url}")
+        
+        # Download and save the image
+        image_response = requests.get(image_url)
+        if image_response.status_code != 200:
+            return {"error": "Failed to download generated image"}, 500
+        
+        # Create directory structure if user/session provided
+        if user and session:
+            image_dir = os.path.join(ROOT_DIR, user, session, "generated_images")
+            os.makedirs(image_dir, exist_ok=True)
+            
+            # Generate filename with timestamp
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            filename = f"generated_{timestamp}.png"
+            local_path = os.path.join(image_dir, filename)
+        else:
+            # Save to temp directory if no user/session
+            temp_dir = os.path.join(ROOT_DIR, "temp_images")
+            os.makedirs(temp_dir, exist_ok=True)
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            filename = f"generated_{timestamp}.png"
+            local_path = os.path.join(temp_dir, filename)
+        
+        # Save image locally
+        with open(local_path, "wb") as f:
+            f.write(image_response.content)
+        
+        print(f"✓ Image saved to: {local_path}")
+        
+        result = {
+            "image_url": image_url,  # OpenAI URL (temporary)
+            "local_path": local_path,
+            "filename": filename,
+            "size": size
+        }
+        
+        # Upload to Supabase if user/session provided
+        if user and session:
+            try:
+                with open(local_path, "rb") as f:
+                    supabase_path = f"{user}/{session}/generated_images/{filename}"
+                    supabase.storage.from_("media").upload(
+                        supabase_path,
+                        f,
+                        file_options={"content-type": "image/png"}
+                    )
+                
+                # Get public URL
+                supabase_url = supabase.storage.from_("media").get_public_url(supabase_path)
+                result["supabase_url"] = supabase_url
+                print(f"✓ Image uploaded to Supabase: {supabase_url}")
+            except Exception as e:
+                print(f"⚠️  Failed to upload to Supabase: {e}")
+                # Continue anyway, local file still available
+        
+        return result, 200
+        
+    except Exception as e:
+        print(f"❌ Error generating image: {e}")
+        import traceback
+        traceback.print_exc()
+        return {"error": f"Failed to generate image: {str(e)}"}, 500
 
-function_list = [init_session, append_image, append_pdflike, remove_img, remove_pdf, analyse_pdf, analyse_img, generate_study_guide, generate_flashcard_questions, generate_worksheet_questions, mark_worksheet_question, inference_from_prompt, generate_podcast]
+
+def generate_podcast_image(request):
+    """
+    Generate a podcast cover image from a summary
+    
+    Parameters:
+    - summary: Text summary of the podcast content
+    - user: User ID
+    - session: Session ID
+    
+    Returns:
+    - image_url: URL of the generated image
+    - local_path: Path where image is saved locally
+    - supabase_url: Public URL from Supabase storage
+    """
+    summary = request.form.get("summary")
+    user = request.form.get("user")
+    session = request.form.get("session")
+    
+    if not summary:
+        return {"error": "No summary provided"}, 400
+    if not user or not session:
+        return {"error": "User and session are required"}, 400
+    
+    try:
+        # Create an image prompt from the summary
+        # Use LLM to convert summary into a good image prompt
+        prompt_messages = [
+            {
+                "role": "system",
+                "content": "You are an expert at creating image prompts for DALL-E. Given a podcast summary, create a concise, visual prompt for a podcast cover image. The prompt should be descriptive, artistic, and suitable for a podcast cover. Keep it under 400 characters. Focus on visual elements, style, and mood."
+            },
+            {
+                "role": "user",
+                "content": f"Create an image prompt for a podcast cover based on this summary:\n\n{summary}"
+            }
+        ]
+        
+        print("Generating image prompt from summary...")
+        prompt_response = LLM_inference(messages=prompt_messages)
+        image_prompt = prompt_response.choices[0].message.content.strip()
+        print(f"Generated prompt: {image_prompt}")
+        
+        # Initialize OpenAI client
+        api_key = os.getenv("OPENAI_API_KEY")
+        client = OpenAI(api_key=api_key)
+        
+        print(f"Generating podcast cover image...")
+        
+        # Generate image using DALL-E 2 at 512x512 (good for podcast covers)
+        response = client.images.generate(
+            model="dall-e-2",
+            prompt=image_prompt,
+            size="512x512",  # Perfect size for podcast covers
+            # quality="standard",
+            n=1,
+        )
+        
+        image_url = response.data[0].url
+        print(f"✓ Image generated: {image_url}")
+        
+        # Download the image
+        image_response = requests.get(image_url)
+        if image_response.status_code != 200:
+            return {"error": "Failed to download generated image"}, 500
+        
+        # Create directory structure
+        image_dir = os.path.join(ROOT_DIR, user, session, "podcast_images")
+        os.makedirs(image_dir, exist_ok=True)
+        
+        # Generate filename with timestamp
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        filename = f"podcast_cover_{timestamp}.png"
+        local_path = os.path.join(image_dir, filename)
+        
+        # Save image locally
+        with open(local_path, "wb") as f:
+            f.write(image_response.content)
+        
+        print(f"✓ Image saved to: {local_path}")
+        
+        # Prepare Supabase storage path
+        image_key = f"{user}/{session}/podcast_images/{filename}"
+        
+        result = {
+            "image_url": image_url,
+            "local_path": local_path,
+            "filename": filename,
+            "size": "512x512",
+            "prompt": image_prompt,
+            "image_key": image_key  # Supabase storage path
+        }
+        
+        # Upload to Supabase
+        try:
+            with open(local_path, "rb") as f:
+                supabase.storage.from_("media").upload(
+                    image_key,
+                    f,
+                    file_options={"content-type": "image/png"}
+                )
+            
+            # Get public URL
+            supabase_url = supabase.storage.from_("media").get_public_url(image_key)
+            result["supabase_url"] = supabase_url
+            print(f"✓ Image uploaded to Supabase: {supabase_url}")
+            print(f"✓ Image key: {image_key}")
+        except Exception as e:
+            print(f"⚠️  Failed to upload to Supabase: {e}")
+            # Continue anyway, local file still available
+        
+        return result, 200
+        
+    except Exception as e:
+        print(f"❌ Error generating podcast image: {e}")
+        import traceback
+        traceback.print_exc()
+        return {"error": f"Failed to generate podcast image: {str(e)}"}, 500
+
+
+function_list = [
+    init_session, 
+    append_image, 
+    append_pdflike, 
+    remove_img, 
+    remove_pdf, 
+    analyse_pdf, 
+    analyse_img, 
+    generate_study_guide, 
+    generate_flashcard_questions, 
+    generate_worksheet_questions, 
+    mark_worksheet_question, 
+    inference_from_prompt, 
+    generate_podcast_structure_endpoint,  # Generate structure
+    generate_podcast_audio_from_text,  # TTS + upload
+    generate_image,  # AI image generation
+    generate_podcast_image,  # Generate podcast cover from summary
+    # regenerate_podcast_segment_endpoint  # Regenerate one segment
+]
 
 @app.route("/upload", methods=["POST"])
 def upload_content():
@@ -657,5 +1099,5 @@ def status():
     return jsonify({"status": "busy" if server_status["busy"] else "idle"}), 200
 
 if __name__ == "__main__":
-    PORT = os.getenv("PORT", 61016)
+    PORT = int(os.getenv("PORT", 61016))
     app.run(threaded=True, host="0.0.0.0", port=PORT)

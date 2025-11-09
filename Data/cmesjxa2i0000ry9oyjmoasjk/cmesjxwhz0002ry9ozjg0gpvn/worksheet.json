@@ -1,140 +1,151 @@
 {
   "id": 0,
-  "title": "Studious LMS Features and Workflows Worksheet",
-  "description": "A MEDIUM-difficulty worksheet assessing understanding of Studious LMS core modules, workflows, collaboration features, and AI-assisted tools.",
+  "title": "Integrated Sustainability and Digital Well-Being Worksheet",
+  "description": "Eight questions connecting energy efficiency, waste reduction, and social media mental health, with a mix of MCQs, short answers, and calculations.",
   "difficulty": "MEDIUM",
   "estimatedTime": "60 minutes",
   "problems": [
     {
-      "question": "Which Studious LMS feature ensures that schedules, classes, and events stay synchronized across the platform when changes are made?",
-      "answer": "C) Scheduling and Attendance",
+      "question": "Which action yields the largest long-term reduction in residential energy use? Explain your choice and the reasoning behind it.",
+      "answer": "B",
       "type": "MULTIPLE_CHOICE",
       "options": [
-        "A) Academic Management",
-        "B) File Management",
-        "C) Scheduling and Attendance",
-        "D) Communication Systems"
+        "A) replacing light bulbs with LED",
+        "B) upgrading insulation and air sealing",
+        "C) installing rooftop solar",
+        "D) increasing thermostat setbacks to a small degree"
       ],
       "mark_scheme": {
         "points": [
           {
             "point": 1,
-            "requirements": "Identify the Scheduling and Attendance module that keeps schedules synchronized across the platform."
+            "requirements": "Identify the correct option and provide a concise justification."
           }
         ],
         "totalPoints": 1
       }
     },
     {
-      "question": "Explain how Studious supports the end-to-end academic workflow from assignment creation to grading, including deadlines, grading weights, and review via the platform.",
-      "answer": "Studious provides an end-to-end workflow: teachers create tasks with deadlines, define grading weights and clear instructions; students submit within the platform; teachers review and grade within the platform; built-in mark schemes and grading boundaries ensure consistency and fairness.",
+      "question": "Propose three concrete strategies to reduce plastic waste in a household. For each strategy, explain why it is effective, identify potential challenges, and suggest practical ways to overcome them.",
+      "answer": "Strategy 1: Replace single-use plastics with reusables and buy in bulk; Strategy 2: Choose products with minimal or refill packaging and bring your own containers; Strategy 3: Repair, refurbish, and reuse to extend product life.",
       "type": "TEXT",
       "options": [],
       "mark_scheme": {
         "points": [
           {
             "point": 1,
-            "requirements": "Describe the end-to-end workflow from task creation to grading, including deadlines, grading weights, submission, review, and the role of mark schemes."
+            "requirements": "Describe Strategy 1 and justify effectiveness."
+          },
+          {
+            "point": 2,
+            "requirements": "Describe Strategy 2 and justify effectiveness and challenges."
+          },
+          {
+            "point": 3,
+            "requirements": "Describe Strategy 3 and justify effectiveness and challenges."
           }
         ],
-        "totalPoints": 1
+        "totalPoints": 3
       }
     },
     {
-      "question": "What mechanism in Studious provides real-time feedback and keeps discussions relevant across multiple active classes?",
-      "answer": "B) Lab Chats with AI-assisted support",
+      "question": "Explain how social media algorithms can influence mood, attention, and sleep. Then propose two evidence-based strategies individuals can use to maintain mental well-being while staying online.",
+      "answer": "Algorithms influence mood and attention via personalized feeds and notifications; strategies include scheduled social media windows and mindful scrolling.",
+      "type": "TEXT",
+      "options": [],
+      "mark_scheme": {
+        "points": [
+          {
+            "point": 1,
+            "requirements": "Explain algorithm influence on mood, attention, and sleep."
+          },
+          {
+            "point": 2,
+            "requirements": "Propose two evidence-based strategies for maintaining well-being online."
+          }
+        ],
+        "totalPoints": 2
+      }
+    },
+    {
+      "question": "Which concept best captures the goal of designing systems to maximize repair, reuse, and local resilience: A) Linear economy, B) Circular economy, C) Share economy, or D) Globalization? Justify your choice with examples.",
+      "answer": "B",
       "type": "MULTIPLE_CHOICE",
       "options": [
-        "A) Built-in messaging",
-        "B) Lab Chats with AI-assisted support",
-        "C) Announcements",
-        "D) File attachments"
+        "A) Linear economy",
+        "B) Circular economy",
+        "C) Share economy",
+        "D) Globalization"
       ],
       "mark_scheme": {
         "points": [
           {
             "point": 1,
-            "requirements": "Identify the AI-assisted Lab Chats feature as the mechanism for real-time feedback across classes."
+            "requirements": "Identify correct option and justify with examples."
           }
         ],
         "totalPoints": 1
       }
     },
     {
-      "question": "Describe the file management workflow: uploading resources, student submissions, review and grading without leaving the platform, and the recovery mechanism in case of connection drops.",
-      "answer": "The file management workflow: a clear, secure file system for resources; uploads linked to relevant context; students submit work via the same interface; teachers review and grade inside the platform; uploads have progress indicators and automatic recovery; if a connection drops, Studious resumes uploads safely without data loss.",
+      "question": "A four-room home currently uses 60W incandescent bulbs for 4 hours per day. The homeowner plans to replace them with 9W LED bulbs. Compute (a) annual energy savings in kWh, and (b) rough CO2 emissions reduction in pounds per year, given an emission factor of 0.92 pounds CO2 per kWh. Show your calculations.",
+      "answer": "a) 74.46 kWh; b) 68.5 lb CO2 per year",
+      "type": "NUMERIC",
+      "options": [],
+      "mark_scheme": {
+        "points": [
+          {
+            "point": 1,
+            "requirements": "Compute annual energy savings in kWh."
+          },
+          {
+            "point": 2,
+            "requirements": "Compute CO2 emissions reduction in pounds per year."
+          }
+        ],
+        "totalPoints": 2
+      }
+    },
+    {
+      "question": "Design a 7-day digital well-being plan for a college student. Include goals, daily activities, boundaries (e.g., screen time limits, no-phone hours), and metrics to evaluate progress at the end of the week.",
+      "answer": "A 7-day plan with clear daily goals, boundaries, activities, and weekly metrics (mood, screen time, sleep, academic performance).",
       "type": "TEXT",
       "options": [],
       "mark_scheme": {
         "points": [
           {
             "point": 1,
-            "requirements": "Explain the end-to-end file management workflow including uploads, submissions, review, and data recovery on interruptions."
+            "requirements": "Provide a complete 7-day plan including goals, activities, boundaries, and metrics."
           }
         ],
         "totalPoints": 1
       }
     },
     {
-      "question": "Discuss the role of AI-assisted Lab Chats in guiding problem-solving sessions and potential limitations.",
-      "answer": "Lab Chats connect to a class for AI-assisted guided discussions or problem-solving sessions; potential limitations include AI accuracy issues, possible over-reliance, and the need for human oversight and privacy considerations.",
+      "question": "Compare and contrast two perspectives on social media’s impact on mental health: (a) harms (e.g., anxiety, comparison, sleep disruption) and (b) benefits (e.g., community, support, information access). Synthesize a balanced view and discuss where evidence is strongest and where gaps remain.",
+      "answer": "Harms perspective highlights anxiety and sleep disruption; benefits perspective emphasizes community and information access. A balanced view suggests mindful use, feed curation, boundaries, and recognition of evidence strengths and gaps.",
       "type": "TEXT",
       "options": [],
       "mark_scheme": {
         "points": [
           {
             "point": 1,
-            "requirements": "Explain the purpose of Lab Chats and identify at least two potential limitations."
+            "requirements": "Present both perspectives and provide a synthesis with evidence discussion."
           }
         ],
         "totalPoints": 1
       }
     },
     {
-      "question": "Which module would a teacher use to connect a class event to an assignment and automatically update attendance history?",
-      "answer": "C) Scheduling and Attendance",
-      "type": "MULTIPLE_CHOICE",
-      "options": [
-        "A) Academic Management",
-        "B) File Management",
-        "C) Scheduling and Attendance",
-        "D) Communication Systems"
-      ],
-      "mark_scheme": {
-        "points": [
-          {
-            "point": 1,
-            "requirements": "Identify Scheduling and Attendance as the module that links events to assignments and updates attendance history."
-          }
-        ],
-        "totalPoints": 1
-      }
-    },
-    {
-      "question": "Propose a plan for evaluating student participation and attendance trends using the built-in attendance history and reporting features.",
-      "answer": "Plan: collect attendance history to compute participation trends; analyze per class, subject, or student; track patterns over time; use reports to identify at-risk students; correlate attendance with assignment submissions and performance; set improvement targets and monitor dashboards; produce periodic summaries for stakeholders.",
+      "question": "Propose a small community program to promote sustainable living (e.g., a repair cafe, community garden, or tool library). Outline the program’s objectives, stakeholder roles, activities, timeline, and metrics for evaluating impact over three months.",
+      "answer": "A community program plan with objectives, roles, activities, a 3-month timeline, and metrics such as participation, items repaired or lent, waste diverted, and satisfaction.",
       "type": "TEXT",
       "options": [],
       "mark_scheme": {
         "points": [
           {
             "point": 1,
-            "requirements": "Describe a plan that uses attendance history and reports to identify trends and at-risk students, including actions to improve attendance."
-          }
-        ],
-        "totalPoints": 1
-      }
-    },
-    {
-      "question": "Assess how the built-in announcements and messaging features support real-time alignment between teachers and students, including use-cases like reminders, feedback, and attachments.",
-      "answer": "The built-in announcements provide real-time updates to all students; messaging supports one-on-one and group conversations; mentions and notifications ensure messages are seen; attachments enable sharing of study materials and feedback; use-cases include posting reminders for assignments, sharing feedback on submissions, and distributing attachments linked to lessons.",
-      "type": "TEXT",
-      "options": [],
-      "mark_scheme": {
-        "points": [
-          {
-            "point": 1,
-            "requirements": "Explain how announcements and messaging enable real-time communication and give practical use-cases."
+            "requirements": "Provide objectives, stakeholder roles, activities, timeline, and impact metrics."
           }
         ],
         "totalPoints": 1
