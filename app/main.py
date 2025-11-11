@@ -983,10 +983,8 @@ def generate_study_guide_segmentation(request):
         print("Study guide not provided.")
         return {"error": "Study guide not provided."}, 400
     
-    messages = generate_study_guide_segmentation(study_guide)
-    safe_json_parse(messages, f"{ROOT_DIR}/{user}/{session}/study_guide_segmentation.json")
-    segmentation_str = messages[-1].get("content", "")
-    return {"segmentation": segmentation_str}, 200  
+    messages = generate_segmentation(study_guide)
+    return {"segmentation": messages}, 200  
 
 def validate_study_guide_comperhension(request):
     user = request.form.get("user")
@@ -1008,8 +1006,7 @@ def validate_study_guide_comperhension(request):
         return {"error": "Student response not provided."}, 400
     
     messages = validate_summary_correctness(study_guide, segment_content, student_response)
-    feedback_str = messages[-1].get("content", "")
-    return {"feedback": feedback_str}, 200  
+    return {"feedback": messages}, 200  
 
 
 

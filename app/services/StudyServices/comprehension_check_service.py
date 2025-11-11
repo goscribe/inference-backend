@@ -31,23 +31,30 @@ def generate_segmentation(study_guide):
                                 "json_schema": {
                                     "name": "study_guide_segmentation",
                                     "schema": {
-                                        "type": "array",
-                                        "description": "A list of study segments with their corresponding hints for memorization.",
-                                        "items": {
-                                            "type": "object",
-                                            "properties": {
-                                                "hint": {
-                                                    "type": "string",
-                                                    "description": "A short textual hint that helps the student recall the content."
-                                                },
-                                                "content": {
-                                                    "type": "string",
-                                                    "description": "The exact text segment taken from the original study guide."
+                                        "type": "object",
+                                        "properties": {
+                                            "segments": {
+                                                "type": "array",
+                                                "description": "A list of study segments with their corresponding hints for memorization.",
+                                                "items": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "hint": {
+                                                            "type": "string",
+                                                            "description": "A short textual hint that helps the student recall the content."
+                                                        },
+                                                        "content": {
+                                                            "type": "string",
+                                                            "description": "The exact text segment taken from the original study guide."
+                                                        }
+                                                    },
+                                                    "required": ["hint", "content"],
+                                                    "additionalProperties": False
                                                 }
-                                            },
-                                            "required": ["hint", "content"],
-                                            "additionalProperties": False
-                                        }
+                                            }
+                                        },
+                                        "required": ["segments"],
+                                        "additionalProperties": False
                                     }
                                 }
                             }
