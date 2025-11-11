@@ -20,6 +20,7 @@ from app.services.StudyServices.podcast_service import (
 )
 from app.services.ChatService.chat_service import prompt_input
 from app.utils.utils import update_memory, safe_json_parse
+from app.db import append_message, save_messages, get_messages
 import requests
 from markdownConvertor import *
 converter = MarkdownToEditorJS()
@@ -175,10 +176,8 @@ def init_session(request):
     # Append only the assistant's message content
     messages.append({"role": "assistant", "content": resp.choices[0].message.content})
 
-    # Save messages.json inside session folder
-    messages_path = os.path.join(session_dir, "messages.json")
-    with open(messages_path, "w") as f:
-        json.dump(messages, f, indent=2)
+    # Save messages to Supabase database
+    save_messages(CURRENT_USER_ID, CURRENT_SESSION_ID, messages)
 
     print(f"Session '{CURRENT_SESSION_ID}' initialized under user '{CURRENT_USER_ID}'.")
     return {"message": f"Session '{CURRENT_SESSION_ID}' initialized successfully for user '{CURRENT_USER_ID}'"}, 200
@@ -313,8 +312,7 @@ def analyse_pdf(request):
         return {"error": "Session not initialized."}, 400
    
 
-    with open(f"{ROOT_DIR}/{user}/{session}/messages.json", "r") as f:
-        messages = json.load(f)
+    messages = get_messages(session)
     pdf_dir_path = f"{ROOT_DIR}/{user}/{session}/pdfs"
     entries = os.listdir(pdf_dir_path)
     if len(entries) == 0:
@@ -324,8 +322,7 @@ def analyse_pdf(request):
     pdf_paths = [os.path.abspath(os.path.join(pdf_dir_path, entry)) for entry in entries]
     print(pdf_paths)
     messages = read_pdf(messages, pdf_paths)
-    with open(f"{ROOT_DIR}/{user}/{session}/messages.json", "w") as f:
-        json.dump(messages, f, indent=2)
+    save_messages(user, session, messages)
 
     print(f"Analysing PDF texts Successful")
 
@@ -333,8 +330,7 @@ def analyse_pdf(request):
     os.makedirs(f"{img_saving_path}", exist_ok=True)
     messages = read_pdf_images(messages, pdf_paths, img_saving_path)
 
-    with open(f"{ROOT_DIR}/{user}/{session}/messages.json", "w") as f:
-        json.dump(messages, f, indent=2)
+    save_messages(user, session, messages)
 
     print(f"Analysing PDF Image Content Successful")
 
@@ -351,8 +347,7 @@ def analyse_img(request):
     if not user or not session:
         return {"error": "Session not initialized."}, 400
 
-    with open(f"{ROOT_DIR}/{user}/{session}/messages.json", "r") as f:
-        messages = json.load(f)
+    messages = get_messages(session)
     img_dir_path = f"{ROOT_DIR}/{user}/{session}/imgs"
     entries = os.listdir(img_dir_path)
     if len(entries) == 0:
@@ -361,8 +356,7 @@ def analyse_img(request):
         
     img_paths = [os.path.abspath(os.path.join(img_dir_path, entry)) for entry in entries]
     messages = read_images(messages, img_paths)
-    with open(f"{ROOT_DIR}/{user}/{session}/messages.json", "w") as f:
-        json.dump(messages, f, indent=2)
+    save_messages(user, session, messages)
 
     print(f"Analysing Images Successful")
     return {"message": "Analysing Images Successful"}, 200
@@ -374,8 +368,7 @@ def generate_study_guide(request):
     if not user or not session:
         return {"error": "Session not initialized."}, 400
 
-    with open(f"{ROOT_DIR}/{user}/{session}/messages.json", "r") as f:
-        messages = json.load(f)
+    messages = get_messages(session)
 
     messages = generate_summary(messages)
     markdown_text = messages[-1].get("content", "")
@@ -384,8 +377,7 @@ def generate_study_guide(request):
     mindmap_mermaid = messages[-1].get("content", "")
     print("Generating Study Guide Mindmap Successfully")
 
-    with open(f"{ROOT_DIR}/{user}/{session}/messages.json", "w") as f:
-        json.dump(messages, f, indent=2)
+    save_messages(user, session, messages)
     
     # editorjs_json = converter.convert(markdown_text)
     # json_str = json.dumps(editorjs_json, indent=2, ensure_ascii=False)
@@ -410,8 +402,7 @@ def generate_flashcard_questions(request):
         return {"error": "Difficulty not Specified."}, 400
 
     # --- Load message history ---
-    with open(f"{ROOT_DIR}/{user}/{session}/messages.json", "r", encoding="utf-8") as f:
-        messages = json.load(f)
+    messages = get_messages(session)
 
     
     messages = generate_flashcards_q(messages, num_questions, difficulty)
@@ -420,8 +411,7 @@ def generate_flashcard_questions(request):
     print("Generating Flashcard Answers Successful.")
     messages = generate_flashcards_json(messages)
 
-    with open(f"{ROOT_DIR}/{user}/{session}/messages.json", "w", encoding="utf-8") as f:
-        json.dump(messages, f, indent=2, ensure_ascii=False)
+    save_messages(user, session, messages)
 
     safe_json_parse(messages, f"{ROOT_DIR}/{user}/{session}/flashcards.json")
     last_content = messages[-1].get("content", "")
@@ -446,8 +436,7 @@ def generate_worksheet_questions(request):
 
     num_questions = int(num_questions)
 
-    with open(f"{ROOT_DIR}/{user}/{session}/messages.json", "r", encoding="utf-8") as f:
-        messages = json.load(f)
+    messages = get_messages(session)
 
     messages = generate_worksheet_q(messages, num_questions, difficulty)
     print("Generating Worksheet Questions Successful.")
@@ -455,8 +444,7 @@ def generate_worksheet_questions(request):
     print("Generating Worksheet Answers Successful.")
     messages = generate_worksheet_json(messages, worksheet_id=session, num_questions=num_questions)
 
-    with open(f"{ROOT_DIR}/{user}/{session}/messages.json", "w", encoding="utf-8") as f:
-        json.dump(messages, f, indent=2, ensure_ascii=False)
+    save_messages(user, session, messages)
     
     safe_json_parse(messages, f"{ROOT_DIR}/{user}/{session}/worksheet.json")
     worksheet_str = messages[-1].get("content", "")    
@@ -504,13 +492,11 @@ def inference_from_prompt(request):
         print("No prompt input.")
         return {"error": "No prompt input."}, 400
 
-    with open(f"{ROOT_DIR}/{user}/{session}/messages.json", "r") as f:
-        messages = json.load(f)
+    messages = get_messages(session)
         
     messages = prompt_input(messages, prompt)
     
-    with open(f"{ROOT_DIR}/{user}/{session}/messages.json", "w") as f:
-        json.dump(messages, f, indent=2)
+    save_messages(user, session, messages)
         
     last_content = messages[-1].get("content", "")
     print("Last message:", messages[-1])
@@ -549,8 +535,7 @@ def generate_podcast_structure_endpoint(request):
     print(f"🎙️ Generating podcast structure: '{title}'")
     
     # Load conversation history
-    with open(f"{ROOT_DIR}/{user}/{session}/messages.json", "r") as f:
-        messages = json.load(f)
+    messages = get_messages(session)
 
     try:
         # Generate podcast structure
@@ -563,8 +548,7 @@ def generate_podcast_structure_endpoint(request):
         )
         
         # Save updated messages
-        with open(f"{ROOT_DIR}/{user}/{session}/messages.json", "w") as f:
-            json.dump(messages, f, indent=2)
+        save_messages(user, session, messages)
         
         print(f"✅ Generated structure with {len(structured_content.get('segments', []))} segments")
         

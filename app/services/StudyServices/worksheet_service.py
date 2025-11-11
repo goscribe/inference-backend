@@ -69,7 +69,7 @@ def generate_worksheet_json(messages, worksheet_id, num_questions):
         }},
         {{
             "question": "<Question 3>",
-            "answer": "<Answer 3>",
+            "answer": "<Answer 3> - Index of the correct option starting from 0",
             "type": "MULTIPLE_CHOICE",
             "options": ["<Option 1>", "<Option 2>", "<Option 3>"],
             "mark_scheme": {{
@@ -99,7 +99,7 @@ def generate_worksheet_json(messages, worksheet_id, num_questions):
         }},
         {{
             "question": "<Question 5>",
-            "answer": "<Answer 5>",
+            "answer": "<Answer 5 - TRUE or FALSE>",
             "type": "TRUE_FALSE",
             "options": [Keep this empty],
             "mark_scheme": {{
