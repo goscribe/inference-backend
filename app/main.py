@@ -18,6 +18,7 @@ from app.services.StudyServices.podcast_service import (
     estimate_segment_duration,
     create_full_transcript
 )
+from app.services.StudyServices.comprehension_check_service import generate_segmentation, validate_summary_correctness
 from app.services.ChatService.chat_service import prompt_input
 from app.utils.utils import update_memory, safe_json_parse
 import requests
@@ -109,6 +110,8 @@ command_list = [
     "generate_image",  # AI image generation
     "generate_podcast_image",  # Generate podcast cover image from summary
     # "regenerate_podcast_segment"  # Regenerate a specific segment
+    "generate_study_guide_segmentation",
+    "validate_study_guide_comperhension",
 ]
 
 load_dotenv()
@@ -968,6 +971,46 @@ def generate_podcast_image(request):
         import traceback
         traceback.print_exc()
         return {"error": f"Failed to generate podcast image: {str(e)}"}, 500
+    
+def generate_study_guide_segmentation(request):
+    user = request.form.get("user")
+    session = request.form.get("session")
+    study_guide = request.form.get("study_guide")
+
+    if not user or not session:
+        return {"error": "Session not initialized."}, 400
+    if not study_guide:
+        print("Study guide not provided.")
+        return {"error": "Study guide not provided."}, 400
+    
+    messages = generate_study_guide_segmentation(study_guide)
+    safe_json_parse(messages, f"{ROOT_DIR}/{user}/{session}/study_guide_segmentation.json")
+    segmentation_str = messages[-1].get("content", "")
+    return {"segmentation": segmentation_str}, 200  
+
+def validate_study_guide_comperhension(request):
+    user = request.form.get("user")
+    session = request.form.get("session")
+    if not user or not session:
+        return {"error": "Session not initialized."}, 400
+    study_guide = request.form.get("study_guide")
+    segment_content = request.form.get("segment_content")
+    student_response = request.form.get("student_response")
+
+    if not study_guide:
+        print("Study guide not provided.")
+        return {"error": "Study guide not provided."}, 400
+    if not segment_content:
+        print("Segment content not provided.")
+        return {"error": "Segment content not provided."}, 400
+    if not student_response:
+        print("Student response not provided.")
+        return {"error": "Student response not provided."}, 400
+    
+    messages = validate_summary_correctness(study_guide, segment_content, student_response)
+    feedback_str = messages[-1].get("content", "")
+    return {"feedback": feedback_str}, 200  
+
 
 
 function_list = [
@@ -988,6 +1031,8 @@ function_list = [
     generate_image,  # AI image generation
     generate_podcast_image,  # Generate podcast cover from summary
     # regenerate_podcast_segment_endpoint  # Regenerate one segment
+    generate_study_guide_segmentation,
+    validate_study_guide_comperhension
 ]
 
 @app.route("/upload", methods=["POST"])
