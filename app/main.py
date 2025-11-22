@@ -7,6 +7,7 @@ import traceback
 from datetime import datetime
 # from fileConverter import *
 from app.services.FileServices.file_service import read_pdf_images, read_pdf, read_images
+from app.services.FileServices.file_processor import process_file
 from app.services.StudyServices.study_guide_service import generate_summary, generate_mindmap_mermaid
 from app.services.StudyServices.flashcard_service import generate_flashcards_q, generate_flashcards_a, generate_flashcards_json
 from app.services.StudyServices.worksheet_service import generate_worksheet_q, generate_worksheet_a, generate_worksheet_json, mark_question
@@ -28,7 +29,7 @@ converter = MarkdownToEditorJS()
 import shutil
 from app.models.LLM_inference import LLM_inference
 from dotenv import load_dotenv
-from eleven_labs import *
+from app.models.eleven_labs import *
 from supabase import create_client
 from openai import OpenAI
 from pydub import AudioSegment
@@ -57,20 +58,22 @@ def log_request():
         if form_items:
             for key, value in form_items.items():
                 # Truncate long values
-                if len(str(value)) > 100:
-                    print(f"  {key}: {str(value)[:100]}...")
-                else:
-                    print(f"  {key}: {value}")
+                print(f"  {key}: {value}")
+                # if len(str(value)) > 100:
+                #     print(f"  {key}: {str(value)[:100]}...")
+                # else:
+                #     print(f"  {key}: {value}")
     
     # Log JSON data
     if request.is_json:
         try:
             json_data = request.get_json()
             json_str = json.dumps(json_data, indent=2)
-            if len(json_str) > 300:
-                print(f"  JSON: {json_str[:300]}...")
-            else:
-                print(f"  JSON: {json_str}")
+            print(f"JSON: {json_str}")
+            # if len(json_str) > 300:
+            #     print(f"  JSON: {json_str[:300]}...")
+            # else:
+            #     print(f"  JSON: {json_str}")
         except:
             pass
     
@@ -110,6 +113,7 @@ command_list = [
     "generate_podcast_audio_from_text",  # TTS + upload from text
     "generate_image",  # AI image generation
     "generate_podcast_image",  # Generate podcast cover image from summary
+    "process_file",  # Process file and return comprehensive description
     # "regenerate_podcast_segment"  # Regenerate a specific segment
     "generate_study_guide_segmentation",
     "validate_study_guide_comperhension",
@@ -187,6 +191,18 @@ def init_session(request):
 
 
 def append_image(request):
+    """
+    [DEPRECATED] Upload image to local storage.
+    
+    This endpoint is deprecated. New architecture:
+    1. Upload files to Supabase Storage via primary backend
+    2. Call 'process_file' endpoint with fileUrl
+    3. Store processed content in Prisma
+    
+    This endpoint will be removed in a future version.
+    """
+    print("⚠️  [DEPRECATED] append_image endpoint called. Use file upload to storage + process_file instead.")
+    
     user = request.form.get("user")
     session = request.form.get("session")
     if not user or not session:
@@ -208,10 +224,26 @@ def append_image(request):
     with open(file_path, "wb") as f:
         f.write(file.read())
 
-    return {"message": f"File saved at: {file_path}: Success"}, 200
+    return {
+        "message": f"File saved at: {file_path}: Success",
+        "deprecated": True,
+        "deprecation_warning": "This endpoint is deprecated. Use file upload to storage + process_file endpoint instead."
+    }, 200
 
 
 def append_pdflike(request):
+    """
+    [DEPRECATED] Upload PDF to local storage.
+    
+    This endpoint is deprecated. New architecture:
+    1. Upload files to Supabase Storage via primary backend
+    2. Call 'process_file' endpoint with fileUrl
+    3. Store processed content in Prisma
+    
+    This endpoint will be removed in a future version.
+    """
+    print("⚠️  [DEPRECATED] append_pdflike endpoint called. Use file upload to storage + process_file instead.")
+    
     user = request.form.get("user")
     session = request.form.get("session")
     if not user or not session:
@@ -232,10 +264,24 @@ def append_pdflike(request):
     with open(file_path, "wb") as f:
         f.write(file.read())
 
-    return {"message": f"File saved at: {file_path}: Success"}, 200
+    return {
+        "message": f"File saved at: {file_path}: Success",
+        "deprecated": True,
+        "deprecation_warning": "This endpoint is deprecated. Use file upload to storage + process_file endpoint instead."
+    }, 200
 
 
 def remove_img(request):
+    """
+    [DEPRECATED] Remove image from local storage.
+    
+    This endpoint is deprecated. Files are now managed via Supabase Storage
+    and Prisma database. Use your primary backend to delete files.
+    
+    This endpoint will be removed in a future version.
+    """
+    print("⚠️  [DEPRECATED] remove_img endpoint called. Use primary backend file deletion instead.")
+    
     user = request.form.get("user")
     session = request.form.get("session")
     if not user or not session:
@@ -256,12 +302,26 @@ def remove_img(request):
 
     try:
         os.remove(file_path)
-        return {"message": f"Image '{filename}' removed successfully."}, 200
+        return {
+            "message": f"Image '{filename}' removed successfully.",
+            "deprecated": True,
+            "deprecation_warning": "This endpoint is deprecated. Use primary backend file deletion instead."
+        }, 200
     except OSError as e:
         return {"error": f"Failed to remove file: {str(e)}"}, 500
 
 
 def remove_pdf(request):
+    """
+    [DEPRECATED] Remove PDF from local storage.
+    
+    This endpoint is deprecated. Files are now managed via Supabase Storage
+    and Prisma database. Use your primary backend to delete files.
+    
+    This endpoint will be removed in a future version.
+    """
+    print("⚠️  [DEPRECATED] remove_pdf endpoint called. Use primary backend file deletion instead.")
+    
     user = request.form.get("user")
     session = request.form.get("session")
     if not user or not session:
@@ -304,11 +364,26 @@ def remove_pdf(request):
     msg = f"PDF '{filename}' removed successfully."
     if assets_removed:
         msg += " Associated dissected folder removed."
-    return {"message": msg}, 200
+    return {
+        "message": msg,
+        "deprecated": True,
+        "deprecation_warning": "This endpoint is deprecated. Use primary backend file deletion instead."
+    }, 200
 
 
 
 def analyse_pdf(request):
+    """
+    [DEPRECATED] Analyze PDFs from local storage.
+    
+    This endpoint is deprecated. New architecture:
+    1. Use 'process_file' endpoint to pre-process files (stores descriptions in Prisma)
+    2. Use 'analyse_files' endpoint with fileIds to analyze pre-processed content
+    
+    This endpoint will be removed in a future version.
+    """
+    print("⚠️  [DEPRECATED] analyse_pdf endpoint called. Use process_file + analyse_files instead.")
+    
     user = request.form.get("user")
     session = request.form.get("session")
     if not user or not session:
@@ -317,10 +392,23 @@ def analyse_pdf(request):
 
     messages = get_messages(session)
     pdf_dir_path = f"{ROOT_DIR}/{user}/{session}/pdfs"
+    
+    # Check if directory exists
+    if not os.path.exists(pdf_dir_path):
+        return {
+            "INFO": "No PDFs uploaded.",
+            "deprecated": True,
+            "deprecation_warning": "This endpoint is deprecated. Use process_file + analyse_files instead."
+        }, 200
+    
     entries = os.listdir(pdf_dir_path)
     if len(entries) == 0:
         print(f"No PDFs uploaded.")
-        return {"INFO": "No PDFs uploaded."}, 200
+        return {
+            "INFO": "No PDFs uploaded.",
+            "deprecated": True,
+            "deprecation_warning": "This endpoint is deprecated. Use process_file + analyse_files instead."
+        }, 200
         
     pdf_paths = [os.path.abspath(os.path.join(pdf_dir_path, entry)) for entry in entries]
     print(pdf_paths)
@@ -338,13 +426,28 @@ def analyse_pdf(request):
     print(f"Analysing PDF Image Content Successful")
 
     last_content = messages[-1].get("content", "")
-    return {"message": "Analyse PDFs Successful"}, 200
+    return {
+        "message": "Analyse PDFs Successful",
+        "deprecated": True,
+        "deprecation_warning": "This endpoint is deprecated. Use process_file + analyse_files instead."
+    }, 200
     
 # Global variable to store the full history of current session
 FULL_HISTORY = {"content": None}
 
 
 def analyse_img(request):
+    """
+    [DEPRECATED] Analyze images from local storage.
+    
+    This endpoint is deprecated. New architecture:
+    1. Use 'process_file' endpoint to pre-process files (stores descriptions in Prisma)
+    2. Use 'analyse_files' endpoint with fileIds to analyze pre-processed content
+    
+    This endpoint will be removed in a future version.
+    """
+    print("⚠️  [DEPRECATED] analyse_img endpoint called. Use process_file + analyse_files instead.")
+    
     user = request.form.get("user")
     session = request.form.get("session")
     if not user or not session:
@@ -352,17 +455,34 @@ def analyse_img(request):
 
     messages = get_messages(session)
     img_dir_path = f"{ROOT_DIR}/{user}/{session}/imgs"
+    
+    # Check if directory exists
+    if not os.path.exists(img_dir_path):
+        return {
+            "INFO": "No images uploaded.",
+            "deprecated": True,
+            "deprecation_warning": "This endpoint is deprecated. Use process_file + analyse_files instead."
+        }, 200
+    
     entries = os.listdir(img_dir_path)
     if len(entries) == 0:
-        print(f"No imagess uploaded.")
-        return {"INFO": "No images uploaded."}, 200
+        print(f"No images uploaded.")
+        return {
+            "INFO": "No images uploaded.",
+            "deprecated": True,
+            "deprecation_warning": "This endpoint is deprecated. Use process_file + analyse_files instead."
+        }, 200
         
     img_paths = [os.path.abspath(os.path.join(img_dir_path, entry)) for entry in entries]
     messages = read_images(messages, img_paths)
     save_messages(user, session, messages)
 
     print(f"Analysing Images Successful")
-    return {"message": "Analysing Images Successful"}, 200
+    return {
+        "message": "Analysing Images Successful",
+        "deprecated": True,
+        "deprecation_warning": "This endpoint is deprecated. Use process_file + analyse_files instead."
+    }, 200
 
 
 def generate_study_guide(request):
@@ -373,7 +493,7 @@ def generate_study_guide(request):
 
     messages = get_messages(session)
 
-    messages = generate_summary(messages)
+    messages = generate_summary(messages, workspace_id=session, user_id=user)
     markdown_text = messages[-1].get("content", "")
     print("Generating Study Guide Markdown Successfully")
     messages = generate_mindmap_mermaid(messages)
@@ -408,7 +528,7 @@ def generate_flashcard_questions(request):
     messages = get_messages(session)
 
     
-    messages = generate_flashcards_q(messages, num_questions, difficulty)
+    messages = generate_flashcards_q(messages, num_questions, difficulty, workspace_id=session, user_id=user)
     print("Generating Flashcard Questions Successful.")
     messages = generate_flashcards_a(messages)
     print("Generating Flashcard Answers Successful.")
@@ -441,7 +561,7 @@ def generate_worksheet_questions(request):
 
     messages = get_messages(session)
 
-    messages = generate_worksheet_q(messages, num_questions, difficulty)
+    messages = generate_worksheet_q(messages, num_questions, difficulty, workspace_id=session, user_id=user)
     print("Generating Worksheet Questions Successful.")
     messages = generate_worksheet_a(messages)
     print("Generating Worksheet Answers Successful.")
@@ -548,6 +668,8 @@ def generate_podcast_structure_endpoint(request):
             description,
             user_prompt,
             speakers,
+            workspace_id=session,  # session ID is workspace ID
+            user_id=user
         )
         
         # Save updated messages
@@ -994,6 +1116,67 @@ def validate_study_guide_comperhension(request):
 
 
 
+def process_file_endpoint(request):
+    """
+    Process a file and return comprehensive description.
+    Called by primary backend after file upload.
+    
+    Parameters:
+    - fileUrl: Signed URL or public URL to the file
+    - fileType: 'pdf' or 'image'
+    - maxPages: (optional) Maximum pages to process for large PDFs
+    
+    Returns:
+    {
+        "status": "success" | "error",
+        "textContent": str | null,
+        "imageDescriptions": List[Dict] | null,
+        "comprehensiveDescription": str | null,
+        "pageCount": int,
+        "error": str | null (if status is "error")
+    }
+    """
+    file_url = request.form.get("fileUrl")
+    file_type = request.form.get("fileType")
+    max_pages = request.form.get("maxPages")
+    
+    if not file_url:
+        return {"error": "fileUrl is required"}, 400
+    
+    if not file_type:
+        return {"error": "fileType is required (pdf or image)"}, 400
+    
+    try:
+        max_pages_int = int(max_pages) if max_pages else None
+    except ValueError:
+        max_pages_int = None
+    
+    print(f"🔄 Processing file: {file_type} from {file_url[:50]}...")
+    
+    try:
+        result = process_file(file_url, file_type, max_pages_int)
+        
+        if result["status"] == "error":
+            print(f"❌ Processing failed: {result.get('error', 'Unknown error')}")
+            return result, 500
+        
+        print(f"✅ Processing successful: {result.get('pageCount', 0)} pages")
+        return result, 200
+        
+    except Exception as e:
+        print(f"❌ Unexpected error processing file: {e}")
+        import traceback
+        traceback.print_exc()
+        return {
+            "status": "error",
+            "error": f"Unexpected error: {str(e)}",
+            "textContent": None,
+            "imageDescriptions": [],
+            "comprehensiveDescription": None,
+            "pageCount": 0
+        }, 500
+
+
 function_list = [
     init_session, 
     append_image, 
@@ -1011,6 +1194,7 @@ function_list = [
     generate_podcast_audio_from_text,  # TTS + upload
     generate_image,  # AI image generation
     generate_podcast_image,  # Generate podcast cover from summary
+    process_file_endpoint,  # Process file and return description
     # regenerate_podcast_segment_endpoint  # Regenerate one segment
     generate_study_guide_segmentation,
     validate_study_guide_comperhension

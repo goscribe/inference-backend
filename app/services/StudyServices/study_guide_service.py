@@ -4,9 +4,24 @@ import os
 import fitz  # PyMuPDF
 from app.models.LLM_inference import LLM_inference
 from app.utils.utils import update_memory
+from app.utils.workspace_context import get_workspace_context_as_message
 
-def generate_summary(messages):
+def generate_summary(messages, workspace_id=None, user_id=None):
     """Generate descriptive summary in study-guide style"""
+    # Prepend workspace context if available
+    if workspace_id and user_id:
+        context_message = get_workspace_context_as_message(
+            workspace_id=workspace_id,
+            user_id=user_id,
+            include_file_assets=True,
+            include_flashcards=True
+        )
+        if context_message:
+            # Insert after system message (if exists) or at beginning
+            insert_index = 0
+            if messages and messages[0].get("role") == "system":
+                insert_index = 1
+            messages.insert(insert_index, context_message)
     messages.append({"role": "user", "content": "Now, upon all the information either provided to you, or spotted in images, please \
     generate a descriptive summary in the form of a study guide. In case of any math syntax, DO NOT use latex. Provide only what is asked - the study guide. \
     DO NOT put any words of confirmation like 'sure', 'ok...', or any comments at the end. Just provide the study guide (NOT including flashcards / worksheets). Also, write in Markdown"})

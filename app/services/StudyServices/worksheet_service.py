@@ -4,9 +4,24 @@ import os
 import fitz  # PyMuPDF
 from app.models.LLM_inference import LLM_inference
 from app.utils.utils import update_memory
+from app.utils.workspace_context import get_workspace_context_as_message
 
-def generate_worksheet_q(messages, num_quests=5, difficulty="hard"):
+def generate_worksheet_q(messages, num_quests=5, difficulty="hard", workspace_id=None, user_id=None):
     """Generate worksheet questions"""
+    # Prepend workspace context if available
+    if workspace_id and user_id:
+        context_message = get_workspace_context_as_message(
+            workspace_id=workspace_id,
+            user_id=user_id,
+            include_file_assets=True,
+            include_flashcards=True
+        )
+        if context_message:
+            # Insert after system message (if exists) or at beginning
+            insert_index = 0
+            if messages and messages[0].get("role") == "system":
+                insert_index = 1
+            messages.insert(insert_index, context_message)
     messages.append({"role": "user", "content": f"Now, upon all the information either provided to you, or spotted in images, \
     please generate {num_quests} long questions for a worksheet. They can be of any type: MCQs, FRQs, or even essays, but be organized in terms of the order so that it fits well with a worksheet. The questions shall have difficulty level '{difficulty}'. Please include at least 2 MCQs. \
     FOLLOW STRICTLY THIS FORMAT: \n\

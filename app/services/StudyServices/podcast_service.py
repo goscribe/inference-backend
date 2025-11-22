@@ -5,9 +5,10 @@ Generates podcast scripts with multiple voices (host/guest dialogue)
 import json
 from app.models.LLM_inference import LLM_inference
 from app.utils.utils import update_memory
+from app.utils.workspace_context import get_workspace_context_as_message
 
 
-def generate_podcast_structure(messages, title, description, user_prompt="", speakers=None):
+def generate_podcast_structure(messages, title, description, user_prompt="", speakers=None, workspace_id=None, user_id=None):
     """
     Generate the structure of a multi-speaker podcast episode.
     
@@ -17,10 +18,27 @@ def generate_podcast_structure(messages, title, description, user_prompt="", spe
         description: Episode description
         user_prompt: Optional user requirements
         speakers: List of dicts with 'id' (ElevenLabs voice ID) and 'role' ('host' or 'guest')
+        workspace_id: Optional workspace ID for fetching context
+        user_id: Optional user ID for fetching context
     
     Returns:
         (messages, structured_content) - Updated messages and parsed structure
     """
+    
+    # Prepend workspace context if available
+    if workspace_id and user_id:
+        context_message = get_workspace_context_as_message(
+            workspace_id=workspace_id,
+            user_id=user_id,
+            include_file_assets=True,
+            include_flashcards=True
+        )
+        if context_message:
+            # Insert after system message (if exists) or at beginning
+            insert_index = 0
+            if messages and messages[0].get("role") == "system":
+                insert_index = 1
+            messages.insert(insert_index, context_message)
     
     # Default to single speaker if none provided
     if not speakers or len(speakers) == 0:
