@@ -23,9 +23,9 @@ def generate_summary(messages, workspace_id=None, user_id=None):
                 insert_index = 1
             messages.insert(insert_index, context_message)
     messages.append({"role": "user", "content": "Now, upon all the information either provided to you, or spotted in images, please \
-    generate a descriptive summary in the form of a study guide. In case of any math syntax, DO NOT use latex. Provide only what is asked - the study guide. \
-    DO NOT put any words of confirmation like 'sure', 'ok...', or any comments at the end. Just provide the study guide (NOT including flashcards / worksheets). Also, write in Markdown\
-    Make it as comprehensive as possible, include all materials that are present in the workspace context and the files provided. Additionally, if any more complex graphics are needed, please use embedded html (SVG vector graphics) to represent these."})
+generate a descriptive summary in the form of a study guide. In case of any math syntax, DO NOT use latex. Provide only what is asked - the study guide. \
+DO NOT put any words of confirmation like 'sure', 'ok...', or any comments at the end. Just provide the study guide (NOT including flashcards / worksheets). Also, write in Markdown. \
+Make it as comprehensive as possible, include all materials that are present in the workspace context and the files provided."})
     
     resp = LLM_inference(messages=messages)
     update_memory(messages, resp)
