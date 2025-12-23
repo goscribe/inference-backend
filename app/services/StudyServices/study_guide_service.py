@@ -23,9 +23,24 @@ def generate_summary(messages, workspace_id=None, user_id=None):
                 insert_index = 1
             messages.insert(insert_index, context_message)
     messages.append({"role": "user", "content": "Now, upon all the information either provided to you, or spotted in images, please \
-generate a descriptive summary in the form of a study guide. In case of any math syntax, DO NOT use latex. Provide only what is asked - the study guide. \
-DO NOT put any words of confirmation like 'sure', 'ok...', or any comments at the end. Just provide the study guide (NOT including flashcards / worksheets). Also, write in Markdown. \
-Make it as comprehensive as possible, include all materials that are present in the workspace context and the files provided."})
+    generate a descriptive summary in the form of a study guide. Format this study guide as if it were written for a student - make it clear, \
+    well-organized, easy to understand, and educational. Use a student-friendly tone that explains concepts clearly, breaks down complex ideas into \
+    digestible sections, and highlights key points. Structure it like comprehensive study notes that a student would use to review and learn the material. \
+    In case of any math syntax, DO NOT use latex. Provide only what is asked - the study guide. \
+    DO NOT put any words of confirmation like 'sure', 'ok...', or any comments at the end. Just provide the study guide (NOT including flashcards / worksheets). Also, write in Markdown\
+    Make it as comprehensive as possible, include all materials that are present in the workspace context and the files provided. Additionally, if any more complex graphics are needed, please use embedded html (SVG vector graphics) to represent these.\n\n\
+    IMPORTANT: When generating SVG graphics, follow these guidelines:\n\
+    - Use a viewBox that provides adequate space (e.g., viewBox=\"0 0 800 600\" or larger for complex diagrams)\n\
+    - Set explicit width and height attributes (e.g., width=\"800\" height=\"600\") to ensure proper sizing\n\
+    - Use detailed, precise coordinates and measurements - avoid tiny or cramped graphics\n\
+    - Include proper styling with CSS within the SVG (fill, stroke, stroke-width, font-size, etc.)\n\
+    - For text elements, use appropriate font sizes (minimum 14px, preferably 16-20px for readability)\n\
+    - Use clear, visible stroke widths (minimum 2px for lines, thicker for emphasis)\n\
+    - Ensure adequate spacing between elements for clarity\n\
+    - Use meaningful colors and contrast for better visibility\n\
+    - For diagrams with multiple elements, scale appropriately so nothing appears too small\n\
+    - Example structure: <svg viewBox=\"0 0 800 600\" width=\"800\" height=\"600\" xmlns=\"http://www.w3.org/2000/svg\"><style>text { font-size: 18px; font-family: Arial, sans-serif; }</style>...</svg>\n\
+    - Make graphics comprehensive and detailed - prioritize clarity and completeness over compactness"})
     
     resp = LLM_inference(messages=messages)
     update_memory(messages, resp)
