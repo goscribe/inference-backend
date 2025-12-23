@@ -26,7 +26,7 @@ def generate_summary(messages, workspace_id=None, user_id=None):
     generate a descriptive summary in the form of a study guide. Format this study guide as if it were written for a student - make it clear, \
     well-organized, easy to understand, and educational. Use a student-friendly tone that explains concepts clearly, breaks down complex ideas into \
     digestible sections, and highlights key points. Structure it like comprehensive study notes that a student would use to review and learn the material. \
-    In case of any math syntax, DO NOT use latex. Provide only what is asked - the study guide. \
+    For any mathematical expressions, use LaTeX syntax with markdown formatting: use $...$ for inline math (e.g., $x^2 + y^2 = r^2$) and $$...$$ for block/display math equations (e.g., $$\\int_0^1 f(x)dx$$). Provide only what is asked - the study guide. \
     DO NOT put any words of confirmation like 'sure', 'ok...', or any comments at the end. Just provide the study guide (NOT including flashcards / worksheets). Also, write in Markdown\
     Make it as comprehensive as possible, include all materials that are present in the workspace context and the files provided. Additionally, if any more complex graphics are needed, please use embedded html (SVG vector graphics) to represent these.\n\n\
     IMPORTANT: When generating SVG graphics, follow these guidelines:\n\
